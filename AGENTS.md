@@ -1,6 +1,7 @@
 # Project
 
 - Install: `mise install && mise run install`.
+- Install Git hooks separately when needed: `mise run install-hooks` (hooks are shared by worktrees).
 - Development: `mise daemons start`; inspect with `mise daemons ls`; stop with `mise daemons stop`.
 - Checks: `mise run check`; individual commands: `mise run lint`, `mise run test`, `mise run build`.
 - `apps/api` is the Fastify server; `apps/web` is the Vite client; `contract` is the TypeSpec source.
@@ -10,7 +11,7 @@
 
 ## Worktrees
 
-- For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; `mise run install` also installs Git hooks, which may affect other worktrees sharing the repository.
+- For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; installing shared Git hooks is not required for each worktree.
 - The default API and web ports are 3000 and 5173; the Vite proxy targets API port 3000. Check for existing services before starting another copy. No parallel-port configuration is currently documented, so do not assume changing one port isolates the full application.
 - The scaffold does not require environment variables. If a later task needs ignored configuration, set it up explicitly without copying secrets automatically.
 

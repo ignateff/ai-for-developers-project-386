@@ -51,7 +51,10 @@ cd ai-for-developers-project-386
 mise trust
 mise install
 mise run install
+mise run install-hooks
 ```
+
+`mise run install` устанавливает зависимости. `mise run install-hooks` отдельно устанавливает Git-хуки, общие для worktree репозитория; при подготовке дополнительного worktree повторно устанавливать их не требуется.
 
 ## Использование
 
