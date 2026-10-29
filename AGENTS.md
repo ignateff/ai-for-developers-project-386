@@ -8,6 +8,12 @@
 - Regenerate OpenAPI and SDK with `mise run generate`; never edit `generated/` by hand.
 - Keep mise tasks in sync with root `package.json` scripts: every actionable script must be runnable as `mise run <task>`. If an action has no mise task, add one rather than running the underlying command manually (`mise exec -- pnpm <script>` is a signal a task is missing).
 
+## Worktrees
+
+- For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; `mise run install` also installs Git hooks, which may affect other worktrees sharing the repository.
+- The default API and web ports are 3000 and 5173; the Vite proxy targets API port 3000. Check for existing services before starting another copy. No parallel-port configuration is currently documented, so do not assume changing one port isolates the full application.
+- The scaffold does not require environment variables. If a later task needs ignored configuration, set it up explicitly without copying secrets automatically.
+
 ## Commit messages
 
 - Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope)!: description`. Scope and `!` are optional; include the colon and space, then a concise English description. Example: `feat(api): add booking endpoint`.
