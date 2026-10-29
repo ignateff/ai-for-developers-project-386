@@ -5,7 +5,8 @@
 - Checks: `mise run check`; individual commands: `mise run lint`, `mise run test`, `mise run build`.
 - `apps/api` is the Fastify server; `apps/web` is the Vite client; `contract` is the TypeSpec source.
 - Define API operations in TypeSpec first; add contract tests for each response scenario.
-- Regenerate OpenAPI and SDK with `mise exec -- pnpm run generate`; never edit `generated/` by hand.
+- Regenerate OpenAPI and SDK with `mise run generate`; never edit `generated/` by hand.
+- Keep mise tasks in sync with root `package.json` scripts: every actionable script must be runnable as `mise run <task>`. If an action has no mise task, add one rather than running the underlying command manually (`mise exec -- pnpm <script>` is a signal a task is missing).
 
 ## Commit messages
 

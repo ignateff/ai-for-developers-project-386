@@ -32,6 +32,10 @@ run = "pnpm run test"
 [tasks.build]
 run = "pnpm run build"
 
+[tasks.generate]
+description = "Regenerate OpenAPI spec and SDK from TypeSpec contract"
+run = "pnpm run generate"
+
 [tasks.check]
 description = "Run the same checks locally and in CI"
 run = [
