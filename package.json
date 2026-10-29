@@ -1,0 +1,30 @@
+{
+  "name": "call-calendar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "oxlint --deny-warnings apps",
+    "format:check": "oxfmt --check .",
+    "format": "oxfmt .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "build": "pnpm -r --if-present build",
+    "generate": "tsp compile contract/main.tsp && orval --config contract/orval.config.ts",
+    "check:generated": "node scripts/check-generated.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/http": "1.17.0",
+    "@typespec/openapi3": "1.17.0",
+    "openapi-backend": "5.23.0",
+    "orval": "8.45.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "yaml": "2.9.1"
+  },
+  "packageManager": "pnpm@10.19.0"
+}

@@ -1,0 +1,53 @@
+[settings]
+experimental = true
+
+[tools]
+node = "24.22.2"
+pnpm = "10.19.0"
+hk = "2.9.0"
+pkl = "0.32.2"
+pitchfork = "2.32.3"
+jactionlint = "2.3.0"
+shellcheck = "0.11.0"
+
+[env]
+NODE_ENV = "development"
+
+[tasks.install]
+description = "Install project dependencies and Git hooks"
+run = ["pnpm install --frozen-lockfile", "hk install --mise"]
+
+[tasks.dev-api]
+run = "pnpm --filter @calendar/api dev"
+
+[tasks.dev-web]
+run = "pnpm --filter @calendar/web dev"
+
+[tasks.lint]
+run = "pnpm run lint"
+
+[tasks.test]
+run = "pnpm run test"
+
+[tasks.build]
+run = "pnpm run build"
+
+[tasks.check]
+description = "Run the same checks locally and in CI"
+run = [
+  "pnpm run lint",
+  "pnpm run format:check",
+  "pnpm run typecheck",
+  "pnpm run test",
+  "pnpm run check:generated",
+  "pnpm run build",
+  "jactionlint .github/workflows/ci.yml",
+]
+
+[daemons.api]
+run = "exec pnpm --filter @calendar/api dev"
+ready_port = 3000
+
+[daemons.web]
+run = "exec pnpm --filter @calendar/web dev"
+ready_port = 5173

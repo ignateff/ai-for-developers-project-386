@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    "generated/**",
+    "pnpm-lock.yaml",
+    ".github/workflows/hexlet-check.yml",
+    "README.md"
+  ]
+}

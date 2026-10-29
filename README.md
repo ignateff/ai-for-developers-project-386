@@ -3,7 +3,20 @@
 
 [![hexlet-check](https://github.com/ignateff/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/ignateff/ai-for-developers-project-386/actions)
 
-Разработайте совместно с ИИ сервис для бронирования календаря
+## Обзор проекта
+
+«Календарь звонков» — учебный full-stack проект Хекслета, который разрабатывается совместно с ИИ. Цель проекта — создать сервис, где владелец публикует типы встреч, а гости без регистрации выбирают свободное время и записываются на звонок.
+
+Сейчас готов каркас: запускаются frontend и backend, работает технический endpoint проверки состояния и настроены автоматические проверки. Создание встреч, бронирование и хранение данных ещё не реализованы.
+
+### Устройство проекта
+
+- `apps/web/` — frontend на React, Vite и Mantine.
+- `apps/api/` — backend на Fastify и дымовой тест.
+- `contract/` — исходный контракт API на TypeSpec и настройки генератора SDK.
+- `generated/` — OpenAPI-спецификация и клиентский SDK, созданные из контракта.
+- `mise.toml`, `hk.pkl` — версии инструментов, команды разработки и Git-хуки.
+- `docs/adr/` — архитектурные решения проекта.
 
 ## Сценарий записи на звонок
 
@@ -22,20 +35,36 @@
 
 ## Стек
 
-- Разное
+- TypeScript, Fastify, React, Vite, Mantine
+- TypeSpec → OpenAPI → Orval SDK
+- Vitest, Oxlint, Oxfmt, mise, hk и GitHub Actions
+
+Пока реализован только каркас; бронирование и хранение данных появятся позже. Архитектурные решения описаны в [ADR](docs/adr/0001-technology-stack.md).
 
 ## Установка
 
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
+Установите [mise](https://mise.jdx.dev/getting-started.html) и убедитесь, что команда `mise` доступна в `PATH`. Затем:
 
 ```bash
 git clone https://github.com/ignateff/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
+mise trust
+mise install
+mise run install
 ```
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+```bash
+mise daemons start   # запустить API и frontend
+mise daemons ls      # проверить состояние
+mise daemons stop    # остановить
+mise run check       # все проверки и сборка
+mise run lint        # линтер
+mise run test        # дымовой тест
+```
+
+Frontend доступен на <http://127.0.0.1:5173/>, API health endpoint — на <http://127.0.0.1:3000/api/health>. Для запуска каждого сервера на переднем плане используйте `mise run dev-api` и `mise run dev-web` в разных терминалах. Переменные окружения для каркаса не требуются.
 
 ---
 
