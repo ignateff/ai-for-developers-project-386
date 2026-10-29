@@ -23,6 +23,9 @@ run = "pnpm --filter @calendar/api dev"
 [tasks.dev-web]
 run = "pnpm --filter @calendar/web dev"
 
+[tasks.format]
+run = "pnpm run format"
+
 [tasks.lint]
 run = "pnpm run lint"
 
