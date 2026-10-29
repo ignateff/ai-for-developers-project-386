@@ -1,6 +1,7 @@
 {
   "ignorePatterns": [
     "generated/**",
+    ".agents/skills/**",
     "pnpm-lock.yaml",
     ".github/workflows/hexlet-check.yml",
     "README.md"
