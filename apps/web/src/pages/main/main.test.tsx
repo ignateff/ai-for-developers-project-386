@@ -7,9 +7,9 @@ import { BrowserRouter } from "react-router-dom";
 import { MainPage } from "./main";
 
 const highlights = [
-  "Фиксированные 30-минутные слоты с 09:00 до 18:00.",
-  "Проверка конфликта при бронировании.",
-  "Просмотр предстоящих событий в отдельном разделе.",
+  "Длительность слота зависит от типа встречи.",
+  "Защита от пересечения встреч.",
+  "Список предстоящих встреч для владельца.",
 ];
 
 beforeAll(() => {
@@ -55,7 +55,7 @@ describe("MainPage", () => {
     expect(cta).toHaveAttribute("href", "/book");
   });
 
-  it("lists what is available right now", () => {
+  it("describes planned booking capabilities", () => {
     render(
       <MantineProvider defaultColorScheme="light">
         <BrowserRouter>
@@ -64,6 +64,7 @@ describe("MainPage", () => {
       </MantineProvider>,
     );
 
+    expect(screen.getByRole("heading", { name: "Что планируется" })).toBeInTheDocument();
     const list = screen.getByRole("list");
     const items = screen.getAllByRole("listitem");
     expect(list).toBeInTheDocument();

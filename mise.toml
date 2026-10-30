@@ -46,8 +46,14 @@ run = "pnpm --filter @calendar/web dev"
 [tasks.format]
 run = "pnpm run format"
 
+[tasks."format:check"]
+run = "pnpm run format:check"
+
 [tasks.lint]
 run = "pnpm run lint"
+
+[tasks.typecheck]
+run = "pnpm run typecheck"
 
 [tasks.test]
 run = "pnpm run test"
@@ -58,6 +64,9 @@ run = "pnpm run build"
 [tasks.generate]
 description = "Regenerate OpenAPI spec and SDK from TypeSpec contract"
 run = "pnpm run generate"
+
+[tasks."check:generated"]
+run = "pnpm run check:generated"
 
 [tasks.check]
 description = "Run the same checks locally and in CI"
