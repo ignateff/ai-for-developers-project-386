@@ -17,6 +17,22 @@ NODE_ENV = "development"
 description = "Install project dependencies"
 run = "pnpm install --frozen-lockfile"
 
+[tasks.add]
+description = "Add a dependency to a workspace project (default @calendar/web)"
+usage = '''
+arg "<packages>" var=#true
+flag "--filter <project>" default="@calendar/web"
+'''
+run = '''
+#!/usr/bin/env bash
+eval "packages=(${usage_packages?})"
+pnpm --filter "${usage_filter?}" add "${packages[@]}"
+'''
+
+[tasks.dev]
+description = "Start API and web dev servers (pitchfork daemons)"
+run = ["mise daemons start", "mise daemons ls"]
+
 [tasks.install-hooks]
 description = "Install shared Git hooks"
 run = "hk install --mise"

@@ -1,8 +1,10 @@
 # Project
 
 - Install: `mise install && mise run install`.
+- After adding or changing dependencies, run `mise run install` again: it fails loudly when `package.json` and `pnpm-lock.yaml` drift apart (an interrupted `pnpm add` can leave them out of sync).
+- Add dependencies with `mise run add <packages...>` (targets `@calendar/web`; override with `--filter @calendar/api`).
 - Install Git hooks separately when needed: `mise run install-hooks` (hooks are shared by worktrees).
-- Development: `mise daemons start`; inspect with `mise daemons ls`; stop with `mise daemons stop`.
+- Development: `mise run dev` starts both servers as pitchfork daemons; inspect with `mise daemons ls`; stop with `mise daemons stop`.
 - Checks: `mise run check`; individual commands: `mise run lint`, `mise run test`, `mise run build`.
 - `apps/api` is the Fastify server; `apps/web` is the Vite client; `contract` is the TypeSpec source.
 - Define API operations in TypeSpec first; add contract tests for each response scenario.
@@ -36,3 +38,7 @@ Triage uses five canonical labels. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 This repo uses a single-context layout. See `docs/agents/domain.md`.
+
+### Testing
+
+Where tests live today and when to add web test tooling: see `docs/agents/testing.md`.
