@@ -1,0 +1,41 @@
+.hero {
+  padding-top: 72px;
+  padding-bottom: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding-top: 48px;
+  }
+}
+
+.hero-badge {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.hero-title {
+  margin-top: 20px;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  margin-top: 16px;
+  max-width: 560px;
+}
+
+.hero-cta {
+  align-self: flex-start;
+}
+
+.hero-panel {
+  min-height: 88px;
+}
