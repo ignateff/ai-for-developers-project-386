@@ -24,12 +24,13 @@
 - Add an optional body after a blank line to explain context. Add optional footers after a blank line, using `Token: value` or `Token #value`, for example `Refs: #123`.
 - Write the entire commit message in English: header, body, and footers.
 - Mark a breaking change with `!` before the colon or an uppercase `BREAKING CHANGE: description` footer. When using `!` without the footer, describe the breaking change in the header.
+- After pushing to `main`, verify the latest CI run with `gh run list` — a green run is part of finishing the task (the workflow cancels superseded runs, so judge the final pushed state).
 
 ## Agent skills
 
 ### Issue tracker
 
-Issues and specs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+Issues and specs are tracked in GitHub Issues. Acceptance criteria for a task are recorded in its issue before planning; the interview and plan build from the issue, not from a paraphrase. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
