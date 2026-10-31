@@ -82,6 +82,9 @@ run = "pnpm run build"
 description = "Regenerate OpenAPI spec and SDK from TypeSpec contract"
 run = "pnpm run generate"
 
+[tasks."check:contract-http"]
+run = "pnpm run check:contract-http"
+
 [tasks."check:generated"]
 run = "pnpm run check:generated"
 
@@ -101,6 +104,7 @@ run = [
   "pnpm run typecheck",
   "pnpm run test",
   "pnpm run test:e2e",
+  "pnpm run check:contract-http",
   "pnpm run check:generated",
   "pnpm run build",
   "jactionlint .github/workflows/ci.yml",

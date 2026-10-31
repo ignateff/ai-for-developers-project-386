@@ -13,7 +13,7 @@
 
 ## Design references
 
-- Before working on UI, read **`docs/design/README.md`** first.
+- For UI implementation and browser visual verification against the design, follow **`docs/design/README.md`**.
 - **Primary design source:** `docs/design/calendar-booking.pen` (Penpot JSON). Read the relevant frame from this file for exact specs: colors, typography, sizes, layout, spacing, and component states. The README provides the design-system summary and a mapping of frames to screens/issues.
 - **Screenshots in `docs/design/screenshots/` are outdated** — they exist only for historical context and should NOT be used for implementation reference.
 - Functional requirements live in linked GitHub Issues. If the design file disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
@@ -21,6 +21,7 @@
 ## Worktrees
 
 - For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; installing shared Git hooks is not required for each worktree.
+- Before an agent or its worktree is removed, verify its changes are committed on a reachable branch or saved in a verified patch outside temporary storage. Confirm the result is recoverable before cleanup.
 - The default API and web ports are 3000 and 5173; the Vite proxy targets API port 3000. Check for existing services before starting another copy. No parallel-port configuration is currently documented, so do not assume changing one port isolates the full application.
 - The scaffold does not require environment variables. If a later task needs ignored configuration, set it up explicitly without copying secrets automatically.
 
@@ -49,4 +50,4 @@ This repo uses a single-context layout. See `docs/agents/domain.md`.
 
 ### Testing
 
-Where tests live today and when to add web test tooling: see `docs/agents/testing.md`.
+Contract, browser, visual and parallel-worktree testing: see `docs/agents/testing.md`.

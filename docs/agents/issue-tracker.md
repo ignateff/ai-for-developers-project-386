@@ -10,9 +10,13 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - Sub-issue: `gh issue create --parent <parent> ...` or `gh issue edit <parent> --add-sub-issue <child>`. If unavailable, put `Part of #<parent>` in the child body.
 - Comment: `gh issue comment <number> --body "..."`.
 - Labels: `gh issue edit <number> --add-label "..."` or `--remove-label "..."`.
-- Close: `gh issue close <number> --comment "..."`.
+- Close: `gh issue close <number> --comment "..."` for work resolved without a code merge.
 
 Infer the repo from `git remote -v`; `gh` does this automatically inside a clone.
+
+## Implementation branches
+
+For implementation intended for `main`, open a PR from the integration branch and include `Closes #<number>` for each completed issue and specification. Keep them open until the PR merges into the default branch; a passing branch or a published commit alone does not close them. If the user explicitly requests a different delivery or closure, follow that request and record the outcome in the issues. This rule applies to implementation work; decision-only `/wayfinder` issues follow their resolution procedure below.
 
 ## Pull requests as a triage surface
 

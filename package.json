@@ -14,9 +14,11 @@
     "db:generate": "pnpm --filter @calendar/api db:generate",
     "db:migrate": "pnpm --filter @calendar/api db:migrate",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "check:contract-http": "node scripts/check-contract-http.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "^8.0.10",
     "@playwright/test": "^1.64.1",
     "@types/node": "24.19.2",
     "@typespec/compiler": "1.17.0",
