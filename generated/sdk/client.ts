@@ -339,6 +339,217 @@ const res = await fetch(getMeetingTypesCreateUrl(),
 
 
 
+export type meetingTypeResourceReadResponse200 = {
+  data: MeetingType
+  status: 200
+}
+
+export type meetingTypeResourceReadResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type meetingTypeResourceReadResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type meetingTypeResourceReadResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type meetingTypeResourceReadResponseSuccess = (meetingTypeResourceReadResponse200) & {
+  headers: Headers;
+};
+export type meetingTypeResourceReadResponseError = (meetingTypeResourceReadResponse404 | meetingTypeResourceReadResponse500 | meetingTypeResourceReadResponse503) & {
+  headers: Headers;
+};
+
+export type meetingTypeResourceReadResponse = (meetingTypeResourceReadResponseSuccess | meetingTypeResourceReadResponseError)
+
+export const getMeetingTypeResourceReadUrl = (id: string,) => {
+
+
+
+
+  return `/api/meeting-types/${id}`
+}
+
+export const meetingTypeResourceRead = async (id: string, options?: RequestInit): Promise<meetingTypeResourceReadResponse> => {
+
+  const res = await fetch(getMeetingTypeResourceReadUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: meetingTypeResourceReadResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as meetingTypeResourceReadResponse
+}
+
+
+
+export type meetingTypeResourceUpdateResponse200 = {
+  data: MeetingType
+  status: 200
+}
+
+export type meetingTypeResourceUpdateResponse400 = {
+  data: ApiError
+  status: 400
+}
+
+export type meetingTypeResourceUpdateResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type meetingTypeResourceUpdateResponse412 = {
+  data: ApiError
+  status: 412
+}
+
+export type meetingTypeResourceUpdateResponse428 = {
+  data: ApiError
+  status: 428
+}
+
+export type meetingTypeResourceUpdateResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type meetingTypeResourceUpdateResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type meetingTypeResourceUpdateResponseSuccess = (meetingTypeResourceUpdateResponse200) & {
+  headers: Headers;
+};
+export type meetingTypeResourceUpdateResponseError = (meetingTypeResourceUpdateResponse400 | meetingTypeResourceUpdateResponse404 | meetingTypeResourceUpdateResponse412 | meetingTypeResourceUpdateResponse428 | meetingTypeResourceUpdateResponse500 | meetingTypeResourceUpdateResponse503) & {
+  headers: Headers;
+};
+
+export type meetingTypeResourceUpdateResponse = (meetingTypeResourceUpdateResponseSuccess | meetingTypeResourceUpdateResponseError)
+
+export const getMeetingTypeResourceUpdateUrl = (id: string,) => {
+
+
+
+
+  return `/api/meeting-types/${id}`
+}
+
+export const meetingTypeResourceUpdate = async (id: string,
+    meetingTypeInput: MeetingTypeInput, options?: RequestInit): Promise<meetingTypeResourceUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getMeetingTypeResourceUpdateUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(meetingTypeInput)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: meetingTypeResourceUpdateResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as meetingTypeResourceUpdateResponse
+}
+
+
+
+export type meetingTypeResourceRemoveResponse204 = {
+  data: void
+  status: 204
+}
+
+export type meetingTypeResourceRemoveResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type meetingTypeResourceRemoveResponse412 = {
+  data: ApiError
+  status: 412
+}
+
+export type meetingTypeResourceRemoveResponse428 = {
+  data: ApiError
+  status: 428
+}
+
+export type meetingTypeResourceRemoveResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type meetingTypeResourceRemoveResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type meetingTypeResourceRemoveResponseSuccess = (meetingTypeResourceRemoveResponse204) & {
+  headers: Headers;
+};
+export type meetingTypeResourceRemoveResponseError = (meetingTypeResourceRemoveResponse404 | meetingTypeResourceRemoveResponse412 | meetingTypeResourceRemoveResponse428 | meetingTypeResourceRemoveResponse500 | meetingTypeResourceRemoveResponse503) & {
+  headers: Headers;
+};
+
+export type meetingTypeResourceRemoveResponse = (meetingTypeResourceRemoveResponseSuccess | meetingTypeResourceRemoveResponseError)
+
+export const getMeetingTypeResourceRemoveUrl = (id: string,) => {
+
+
+
+
+  return `/api/meeting-types/${id}`
+}
+
+export const meetingTypeResourceRemove = async (id: string, options?: RequestInit): Promise<meetingTypeResourceRemoveResponse> => {
+
+  const res = await fetch(getMeetingTypeResourceRemoveUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: meetingTypeResourceRemoveResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as meetingTypeResourceRemoveResponse
+}
+
+
+
 export type availabilitySummaryResponse200 = {
   data: AvailabilityResponse
   status: 200

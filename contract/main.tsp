@@ -30,6 +30,13 @@ interface MeetingTypes {
   @post create(@body input: MeetingTypeInput): { @statusCode statusCode: 201; @header etag: string; @body body: MeetingType } | { @statusCode statusCode: 400; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
 }
 
+@route("/api/meeting-types/{id}")
+interface MeetingTypeResource {
+  @get read(@path id: string): { @header etag: string; @body body: MeetingType } | { @statusCode statusCode: 404; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
+  @put update(@path id: string, @header ifMatch?: string, @body input: MeetingTypeInput): { @header etag: string; @body body: MeetingType } | { @statusCode statusCode: 400 | 404 | 412 | 428 | 500 | 503; @body body: ApiError };
+  @delete remove(@path id: string, @header ifMatch?: string): { @statusCode statusCode: 204 } | { @statusCode statusCode: 404 | 412 | 428 | 500 | 503; @body body: ApiError };
+}
+
 model Slot { startsAt: utcDateTime; endsAt: utcDateTime; available: boolean; }
 model SlotsResponse { version: int32; slots: Slot[]; }
 model AvailabilityDay { date: string; availableCount: int32; }

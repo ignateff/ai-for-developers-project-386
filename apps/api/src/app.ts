@@ -75,6 +75,105 @@ export function buildApp(
       .run();
     return reply.status(201).header("ETag", '"1"').send(result);
   });
+  app.get<{ Params: { id: string } }>("/api/meeting-types/:id", async (request, reply) => {
+    const type = storage.db
+      .select()
+      .from(meetingTypes)
+      .where(and(eq(meetingTypes.id, request.params.id), eq(meetingTypes.deleted, false)))
+      .get();
+    if (!type)
+      return reply.status(404).send({ code: "NOT_FOUND", message: "Тип встречи не найден" });
+    const { id, name, description, durationMinutes, version } = type;
+    return reply
+      .header("ETag", `"${version}"`)
+      .send({ id, name, description, durationMinutes, version });
+  });
+  app.put<{ Params: { id: string } }>("/api/meeting-types/:id", async (request, reply) => {
+    const input = request.body as Record<string, unknown> | null;
+    const name = typeof input?.name === "string" ? input.name.trim() : "";
+    const description = typeof input?.description === "string" ? input.description.trim() : "";
+    const durationMinutes = input?.durationMinutes;
+    const fields: Record<string, string> = {};
+    if (!name || [...name].length > 100) fields.name = "Введите название до 100 символов";
+    if (!description || [...description].length > 1000)
+      fields.description = "Введите описание до 1000 символов";
+    if (
+      typeof durationMinutes !== "number" ||
+      !Number.isInteger(durationMinutes) ||
+      durationMinutes < 1 ||
+      durationMinutes > 2147483647
+    )
+      fields.durationMinutes = "Введите целое число от 1 до 2147483647";
+    const match = request.headers["if-match"];
+    const result = storage.db.transaction(
+      (tx) => {
+        const type = tx
+          .select()
+          .from(meetingTypes)
+          .where(and(eq(meetingTypes.id, request.params.id), eq(meetingTypes.deleted, false)))
+          .get();
+        if (!type) return { status: 404 as const };
+        if (!match) return { status: 428 as const };
+        if (match !== `"${type.version}"`) return { status: 412 as const };
+        if (Object.keys(fields).length || typeof durationMinutes !== "number")
+          return { status: 400 as const };
+        const version =
+          type.version +
+          Number(
+            name !== type.name ||
+              description !== type.description ||
+              durationMinutes !== type.durationMinutes,
+          );
+        tx.update(meetingTypes)
+          .set({ name, description, durationMinutes, version })
+          .where(eq(meetingTypes.id, type.id))
+          .run();
+        return {
+          status: 200 as const,
+          type: { id: type.id, name, description, durationMinutes, version },
+        };
+      },
+      { behavior: "immediate" },
+    );
+    if (result.status === 200)
+      return reply.header("ETag", `"${result.type.version}"`).send(result.type);
+    const errors = {
+      400: ["VALIDATION_ERROR", "Проверьте поля"],
+      404: ["NOT_FOUND", "Тип встречи не найден"],
+      412: ["PRECONDITION_FAILED", "Тип встречи изменился"],
+      428: ["PRECONDITION_REQUIRED", "Укажите версию типа"],
+    };
+    const [code, message] = errors[result.status];
+    return reply
+      .status(result.status)
+      .send({ code, message, ...(result.status === 400 ? { fields } : {}) });
+  });
+  app.delete<{ Params: { id: string } }>("/api/meeting-types/:id", async (request, reply) => {
+    const match = request.headers["if-match"];
+    const status = storage.db.transaction(
+      (tx) => {
+        const type = tx
+          .select()
+          .from(meetingTypes)
+          .where(and(eq(meetingTypes.id, request.params.id), eq(meetingTypes.deleted, false)))
+          .get();
+        if (!type) return 404;
+        if (!match) return 428;
+        if (match !== `"${type.version}"`) return 412;
+        tx.update(meetingTypes).set({ deleted: true }).where(eq(meetingTypes.id, type.id)).run();
+        return 204;
+      },
+      { behavior: "immediate" },
+    );
+    if (status === 204) return reply.status(204).send();
+    const errors = {
+      404: ["NOT_FOUND", "Тип встречи не найден"],
+      412: ["PRECONDITION_FAILED", "Тип встречи изменился"],
+      428: ["PRECONDITION_REQUIRED", "Укажите версию типа"],
+    };
+    const [code, message] = errors[status];
+    return reply.status(status).send({ code, message });
+  });
   function getSnapshot(id: string, start: number) {
     return storage.db.transaction((tx) => {
       const type = tx

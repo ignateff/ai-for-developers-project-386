@@ -83,3 +83,22 @@ test("guest resolves a conflict without losing contacts and confirms a booking",
   await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
   await expect(page.getByText(/UTC/)).toBeVisible();
 });
+
+test("owner edits and confirms deletion of a meeting type", async ({ page }) => {
+  await page.goto("/book");
+  await page.getByLabel("Название").fill("Управление типом");
+  await page.getByLabel("Описание").fill("Исходное описание");
+  await page.getByLabel("Длительность в минутах").fill("30");
+  await page.getByRole("button", { name: "Создать тип", exact: true }).click();
+  await page.getByRole("button", { name: "Изменить Управление типом" }).click();
+  await page.getByLabel("Название типа").fill("Обновлённый тип");
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toBeVisible();
+  await page.getByRole("button", { name: "Удалить Обновлённый тип" }).click();
+  await expect(page.getByText(/Новые записи станут недоступны/)).toBeVisible();
+  await page.getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toBeVisible();
+  await page.getByRole("button", { name: "Удалить Обновлённый тип" }).click();
+  await page.getByRole("button", { name: "Подтвердить удаление" }).click();
+  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toHaveCount(0);
+});

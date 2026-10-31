@@ -198,3 +198,47 @@ it("keeps contacts when returning to slot selection and confirms the booking", a
   fireEvent.click(screen.getByRole("button", { name: "Подтвердить запись" }));
   expect(await screen.findByText("Запись подтверждена")).toBeInTheDocument();
 });
+
+it("allows editing and confirming deletion of a meeting type", async () => {
+  const type = { id: "one", name: "Call", description: "Intro", durationMinutes: 30, version: 1 };
+  const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === "PUT")
+      return new Response(JSON.stringify({ ...type, name: "Updated", version: 2 }), {
+        status: 200,
+        headers: { "content-type": "application/json", etag: '"2"' },
+      });
+    if (init?.method === "DELETE") return new Response(null, { status: 204 });
+    return new Response(JSON.stringify([type]), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Изменить Call" }));
+  fireEvent.change(screen.getByLabelText(/Название типа/), { target: { value: " " } });
+  fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+  expect(screen.getByLabelText(/Название типа/)).toHaveAttribute("aria-invalid", "true");
+  fireEvent.change(screen.getByLabelText(/Название типа/), { target: { value: "Updated" } });
+  fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+  await screen.findByRole("button", { name: "Изменить Call" });
+  expect(
+    fetchMock.mock.calls.some(
+      ([, init]) => init?.method === "PUT" && new Headers(init.headers).get("if-match") === '"1"',
+    ),
+  ).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Удалить Call" }));
+  expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Подтвердить удаление" }));
+  await vi.waitFor(() =>
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true),
+  );
+});

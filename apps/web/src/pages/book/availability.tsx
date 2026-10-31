@@ -34,6 +34,7 @@ export function Availability({
     queryKey: ["availability", type.id],
     queryFn: async () => {
       const response = await availabilitySummary(type.id);
+      if (response.status === 404) throw new Error("TYPE_REMOVED");
       if (response.status !== 200) throw new Error("Could not load availability");
       return response.data;
     },
@@ -43,11 +44,15 @@ export function Availability({
     enabled: date !== null,
     queryFn: async () => {
       const response = await availabilitySlots(type.id, { date: date! });
+      if (response.status === 404) throw new Error("TYPE_REMOVED");
       if (response.status !== 200) throw new Error("Could not load slots");
       return response.data;
     },
   });
+  const removed =
+    summary.error?.message === "TYPE_REMOVED" || slots.error?.message === "TYPE_REMOVED";
   const outdated =
+    removed ||
     (summary.data && summary.data.version !== type.version) ||
     (slots.data && slots.data.version !== type.version);
   if (confirmation)
@@ -78,7 +83,7 @@ export function Availability({
       )}
       {outdated && (
         <Text role="alert" c="red">
-          Тип встречи изменился. Вернитесь к выбору типа и обновите страницу.
+          Тип встречи изменился или удалён. Вернитесь к выбору актуального типа.
         </Text>
       )}
       {formOpen && selected ? (

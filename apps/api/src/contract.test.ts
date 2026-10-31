@@ -38,6 +38,7 @@ test("detects real undocumented routes and a documented route without implementa
       paths: {
         "/api/health": { get: {} },
         "/api/meeting-types": { get: {}, post: {} },
+        "/api/meeting-types/{id}": { get: {}, put: {}, delete: {} },
         "/api/bookings": { post: {} },
         "/api/meeting-types/{id}/availability": { get: {} },
         "/api/meeting-types/{id}/slots": { get: {} },
@@ -140,8 +141,45 @@ test("database failures produce safe documented errors", async () => {
       expect(response.status).toBe(503);
       expect(api.validateResponse(await response.json(), operation, 503).errors).toBeNull();
     }
+    for (const [method, operation] of [
+      ["GET", "MeetingTypeResource_read"],
+      ["PUT", "MeetingTypeResource_update"],
+      ["DELETE", "MeetingTypeResource_remove"],
+    ] as const) {
+      const response = await fetch(`${address}/api/meeting-types/id`, {
+        method,
+        headers: {
+          "if-match": '"1"',
+          ...(method === "PUT" ? { "content-type": "application/json" } : {}),
+        },
+        ...(method === "PUT"
+          ? { body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }) }
+          : {}),
+      });
+      expect(response.status).toBe(503);
+      expect(api.validateResponse(await response.json(), operation, 503).errors).toBeNull();
+    }
     db.exec("ROLLBACK");
     db.exec("DROP TABLE meeting_types");
+    for (const [method, operation] of [
+      ["GET", "MeetingTypeResource_read"],
+      ["PUT", "MeetingTypeResource_update"],
+      ["DELETE", "MeetingTypeResource_remove"],
+    ] as const) {
+      const response = await fetch(`${address}/api/meeting-types/id`, {
+        method,
+        headers: {
+          "if-match": '"1"',
+          ...(method === "PUT" ? { "content-type": "application/json" } : {}),
+        },
+        ...(method === "PUT"
+          ? { body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }) }
+          : {}),
+      });
+      expect(response.status).toBe(500);
+      expect(api.validateResponse(await response.json(), operation, 500).errors).toBeNull();
+    }
+
     for (const [url, operation] of [
       ["/api/meeting-types/id/availability", "Availability_summary"],
       [
@@ -257,5 +295,60 @@ test("booking responses and required no-store header match OpenAPI", async () =>
     db.close();
     await app.close();
     rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("meeting type management responses conform to OpenAPI over HTTP", async () => {
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  const app = buildApp();
+  try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const input = { name: "Call", description: "Intro", durationMinutes: 30 };
+    const created = await fetch(`${address}/api/meeting-types`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const { id } = await created.json();
+    const send = async (
+      method: string,
+      path: string,
+      status: number,
+      match?: string,
+      body?: object,
+    ) => {
+      const response = await fetch(`${address}/api/meeting-types/${path}`, {
+        method,
+        headers: {
+          ...(match ? { "if-match": match } : {}),
+          ...(body ? { "content-type": "application/json" } : {}),
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      expect(response.status).toBe(status);
+      const operation =
+        method === "GET"
+          ? "MeetingTypeResource_read"
+          : method === "PUT"
+            ? "MeetingTypeResource_update"
+            : "MeetingTypeResource_remove";
+      const data =
+        status === 204 ? (expect(await response.text()).toBe(""), null) : await response.json();
+      expect(api.validateResponse(data, operation, status).errors).toBeNull();
+    };
+    await send("GET", id, 200);
+    await send("GET", "missing", 404);
+    await send("PUT", id, 428, undefined, input);
+    await send("PUT", id, 412, '"9"', input);
+    await send("PUT", id, 400, '"1"', { ...input, name: "" });
+    await send("PUT", "missing", 404, '"1"', input);
+    await send("PUT", id, 200, '"1"', { ...input, name: "Changed" });
+    await send("DELETE", id, 428);
+    await send("DELETE", id, 412, '"1"');
+    await send("DELETE", "missing", 404, '"2"');
+    await send("DELETE", id, 204, '"2"');
+  } finally {
+    await app.close();
   }
 });

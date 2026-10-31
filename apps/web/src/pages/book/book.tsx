@@ -8,6 +8,7 @@ import {
 } from "../../../../../generated/sdk/client";
 
 import { Availability } from "./availability";
+import { ManageType } from "./manage-type";
 
 export function BookPage() {
   const queryClient = useQueryClient();
@@ -99,6 +100,12 @@ export function BookPage() {
             <Button mt="sm" variant="outline" onClick={() => setSelectedType(item)}>
               Выбрать {item.name}
             </Button>
+            <ManageType
+              type={item}
+              refresh={() => {
+                void list.refetch();
+              }}
+            />
           </Paper>
         ))}
         <Paper withBorder radius="md" p="lg">
