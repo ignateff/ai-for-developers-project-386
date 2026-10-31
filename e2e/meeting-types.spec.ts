@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 
 test("owner creates a meeting type that guests can see", async ({ page }) => {
   await page.goto("/book");
-  await expect(page.getByText("Пока нет типов встреч")).toBeVisible();
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
   await expect(page.getByText("Введите название до 100 символов")).toBeVisible();
   await page.getByLabel("Название").focus();

@@ -1,18 +1,22 @@
 import { defineConfig } from "@playwright/test";
 
+const apiPort = Number(process.env.E2E_API_PORT ?? 3319);
+const webPort = Number(process.env.E2E_WEB_PORT ?? 5319);
+if (![apiPort, webPort].every((port) => Number.isInteger(port) && port > 0 && port <= 65535))
+  throw new Error("Invalid E2E port");
 export default defineConfig({
   testDir: "./e2e",
-  use: { baseURL: "http://127.0.0.1:5319", browserName: "chromium" },
+  workers: 1,
+  use: { baseURL: `http://127.0.0.1:${webPort}`, browserName: "chromium" },
   webServer: [
     {
-      command: "DATABASE_PATH=:memory: PORT=3319 mise run dev-api",
-      url: "http://127.0.0.1:3319/api/health",
+      command: `DATABASE_PATH=:memory: PORT=${apiPort} mise run dev-api`,
+      url: `http://127.0.0.1:${apiPort}/api/health`,
       reuseExistingServer: false,
     },
     {
-      command:
-        "API_PROXY_TARGET=http://127.0.0.1:3319 mise run dev-web -- --port 5319 --strictPort",
-      url: "http://127.0.0.1:5319",
+      command: `API_PROXY_TARGET=http://127.0.0.1:${apiPort} mise run dev-web -- --port ${webPort} --strictPort`,
+      url: `http://127.0.0.1:${webPort}`,
       reuseExistingServer: false,
     },
   ],
