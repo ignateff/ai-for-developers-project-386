@@ -68,6 +68,14 @@ run = "pnpm run generate"
 [tasks."check:generated"]
 run = "pnpm run check:generated"
 
+[tasks."db:generate"]
+description = "Generate database migrations"
+run = "pnpm run db:generate"
+
+[tasks."db:migrate"]
+description = "Apply database migrations"
+run = "pnpm run db:migrate"
+
 [tasks.check]
 description = "Run the same checks locally and in CI"
 run = [
