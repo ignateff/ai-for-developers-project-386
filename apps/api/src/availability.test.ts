@@ -5,16 +5,31 @@ import { join } from "node:path";
 import { expect, it } from "vitest";
 import { buildApp } from "./app.js";
 
+async function httpRequest(
+  address: string,
+  request: { method: string; url: string; payload?: object },
+) {
+  const response = await fetch(`${address}${request.url}`, {
+    method: request.method,
+    ...(request.payload
+      ? { headers: { "content-type": "application/json" }, body: JSON.stringify(request.payload) }
+      : {}),
+  });
+  const body = await response.json();
+  return { statusCode: response.status, json: () => body };
+}
+
 it("returns a 14-day UTC window and only future whole slots", async () => {
   const app = buildApp({ now: () => Date.parse("2026-10-30T10:00:00.000Z") });
   try {
-    const created = await app.inject({
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const created = await httpRequest(address, {
       method: "POST",
       url: "/api/meeting-types",
       payload: { name: "Call", description: "Intro", durationMinutes: 60 },
     });
     const id = created.json().id;
-    const summary = await app.inject({
+    const summary = await httpRequest(address, {
       method: "GET",
       url: `/api/meeting-types/${id}/availability`,
     });
@@ -26,7 +41,7 @@ it("returns a 14-day UTC window and only future whole slots", async () => {
       { date: "2026-11-01", availableCount: 0 },
     ]);
     expect(summary.json().days[13].date).toBe("2026-11-12");
-    const slots = await app.inject({
+    const slots = await httpRequest(address, {
       method: "GET",
       url: `/api/meeting-types/${id}/slots?date=2026-10-30`,
     });
@@ -44,14 +59,15 @@ it("returns a 14-day UTC window and only future whole slots", async () => {
 it("reports errors for invalid and out-of-window dates and missing types", async () => {
   const app = buildApp({ now: () => Date.parse("2026-10-30T23:59:59Z") });
   try {
-    const created = await app.inject({
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const created = await httpRequest(address, {
       method: "POST",
       url: "/api/meeting-types",
       payload: { name: "Call", description: "Intro", durationMinutes: 30 },
     });
     const id = created.json().id;
     for (const date of ["2026-10-29", "2026-11-13"]) {
-      const response = await app.inject({
+      const response = await httpRequest(address, {
         method: "GET",
         url: `/api/meeting-types/${id}/slots?date=${date}`,
       });
@@ -59,7 +75,7 @@ it("reports errors for invalid and out-of-window dates and missing types", async
       expect(response.json().code).toBe("DATE_OUT_OF_RANGE");
     }
     for (const date of ["2026-02-30", "invalid", ""]) {
-      const response = await app.inject({
+      const response = await httpRequest(address, {
         method: "GET",
         url: `/api/meeting-types/${id}/slots?date=${date}`,
       });
@@ -68,11 +84,16 @@ it("reports errors for invalid and out-of-window dates and missing types", async
     }
     for (const path of ["availability", "slots?date=2026-10-30"])
       expect(
-        (await app.inject({ method: "GET", url: `/api/meeting-types/missing/${path}` })).statusCode,
+        (await httpRequest(address, { method: "GET", url: `/api/meeting-types/missing/${path}` }))
+          .statusCode,
       ).toBe(404);
     expect(
-      (await app.inject({ method: "GET", url: `/api/meeting-types/${id}/slots?date=2026-11-12` }))
-        .statusCode,
+      (
+        await httpRequest(address, {
+          method: "GET",
+          url: `/api/meeting-types/${id}/slots?date=2026-11-12`,
+        })
+      ).statusCode,
     ).toBe(200);
   } finally {
     await app.close();
@@ -85,9 +106,10 @@ it("marks partial overlaps across types occupied while allowing adjacent slots",
   const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:59:59Z") });
   const db = new Database(path);
   try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
     const create = async (name: string, durationMinutes: number) =>
       (
-        await app.inject({
+        await httpRequest(address, {
           method: "POST",
           url: "/api/meeting-types",
           payload: { name, description: "Description", durationMinutes },
@@ -111,7 +133,7 @@ it("marks partial overlaps across types occupied while allowing adjacent slots",
       "hash",
       "fingerprint",
     );
-    const response = await app.inject({
+    const response = await httpRequest(address, {
       method: "GET",
       url: `/api/meeting-types/${first}/slots?date=2026-10-30`,
     });
@@ -121,7 +143,7 @@ it("marks partial overlaps across types occupied while allowing adjacent slots",
         .slots.slice(0, 4)
         .map((slot: { available: boolean }) => slot.available),
     ).toEqual([true, false, false, true]);
-    const summary = await app.inject({
+    const summary = await httpRequest(address, {
       method: "GET",
       url: `/api/meeting-types/${first}/availability`,
     });
@@ -129,13 +151,16 @@ it("marks partial overlaps across types occupied while allowing adjacent slots",
     const long = await create("Long", 541);
     expect(
       (
-        await app.inject({ method: "GET", url: `/api/meeting-types/${long}/slots?date=2026-10-30` })
+        await httpRequest(address, {
+          method: "GET",
+          url: `/api/meeting-types/${long}/slots?date=2026-10-30`,
+        })
       ).json().slots,
     ).toEqual([]);
     const wholeDay = await create("Whole day", 540);
     expect(
       (
-        await app.inject({
+        await httpRequest(address, {
           method: "GET",
           url: `/api/meeting-types/${wholeDay}/slots?date=2026-10-30`,
         })
@@ -143,8 +168,12 @@ it("marks partial overlaps across types occupied while allowing adjacent slots",
     ).toHaveLength(1);
     db.prepare("UPDATE meeting_types SET deleted = 1 WHERE id = ?").run(first);
     expect(
-      (await app.inject({ method: "GET", url: `/api/meeting-types/${first}/availability` }))
-        .statusCode,
+      (
+        await httpRequest(address, {
+          method: "GET",
+          url: `/api/meeting-types/${first}/availability`,
+        })
+      ).statusCode,
     ).toBe(404);
   } finally {
     db.close();

@@ -149,10 +149,11 @@ test("database failures produce safe documented errors", async () => {
         "Availability_slots",
       ],
     ] as const) {
-      const response = await app.inject({ method: "GET", url });
-      expect(response.statusCode).toBe(500);
-      expect(response.body).not.toContain("meeting_types");
-      expect(api.validateResponse(response.json(), operation, 500).errors).toBeNull();
+      const response = await fetch(`${address}${url}`);
+      expect(response.status).toBe(500);
+      const body = await response.text();
+      expect(body).not.toContain("meeting_types");
+      expect(api.validateResponse(JSON.parse(body), operation, 500).errors).toBeNull();
     }
     for (const [method, operation] of [
       ["GET", "MeetingTypes_list"],
@@ -184,12 +185,13 @@ test("availability success and client errors conform to OpenAPI", async () => {
   await api.init();
   const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });
   try {
-    const created = await app.inject({
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const created = await fetch(`${address}/api/meeting-types`, {
       method: "POST",
-      url: "/api/meeting-types",
-      payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
     });
-    const id = created.json().id;
+    const { id } = await created.json();
     for (const [url, status, operation] of [
       [`/api/meeting-types/${id}/availability`, 200, "Availability_summary"],
       [`/api/meeting-types/${id}/slots?date=2026-10-30`, 200, "Availability_slots"],
@@ -197,9 +199,9 @@ test("availability success and client errors conform to OpenAPI", async () => {
       ["/api/meeting-types/missing/availability", 404, "Availability_summary"],
       ["/api/meeting-types/missing/slots?date=2026-10-30", 404, "Availability_slots"],
     ] as const) {
-      const response = await app.inject({ method: "GET", url });
-      expect(response.statusCode).toBe(status);
-      expect(api.validateResponse(response.json(), operation, status).errors).toBeNull();
+      const response = await fetch(`${address}${url}`);
+      expect(response.status).toBe(status);
+      expect(api.validateResponse(await response.json(), operation, status).errors).toBeNull();
     }
   } finally {
     await app.close();
