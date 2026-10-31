@@ -60,3 +60,36 @@ it("shows a retryable error when the list cannot be loaded", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось загрузить типы встреч");
   expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
 });
+
+it("accepts Unicode code points at the length limits and rejects values above them", async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue(
+      new Response("[]", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  await screen.findByText("Пока нет типов встреч");
+  const name = screen.getByLabelText(/Название/);
+  const description = screen.getByLabelText(/Описание/);
+  fireEvent.change(name, { target: { value: "😀".repeat(100) } });
+  fireEvent.change(description, { target: { value: "😀".repeat(1000) } });
+  fireEvent.change(screen.getByLabelText(/Длительность в минутах/), { target: { value: "30" } });
+  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
+  expect(screen.queryByText("Введите название до 100 символов")).not.toBeInTheDocument();
+  expect(screen.queryByText("Введите описание до 1000 символов")).not.toBeInTheDocument();
+  await screen.findByRole("alert");
+  fireEvent.change(name, { target: { value: "😀".repeat(101) } });
+  fireEvent.change(description, { target: { value: "😀".repeat(1001) } });
+  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
+  expect(screen.getByText("Введите название до 100 символов")).toBeInTheDocument();
+  expect(screen.getByText("Введите описание до 1000 символов")).toBeInTheDocument();
+});
