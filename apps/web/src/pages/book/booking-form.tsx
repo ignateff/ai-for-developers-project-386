@@ -1,9 +1,11 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { createBooking, type Booking, type MeetingType } from "../../../../../generated/sdk/client";
+import { saveAttempt, clearAttempt, type Attempt } from "./attempt";
 
 export function BookingForm({
   type,
+  onUnknown,
   startsAt,
   name,
   email,
@@ -15,6 +17,7 @@ export function BookingForm({
   onSuccess,
 }: {
   type: MeetingType;
+  onUnknown: (attempt: Attempt) => void;
   startsAt: string;
   name: string;
   email: string;
@@ -28,7 +31,6 @@ export function BookingForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
   async function submit(event: FormEvent) {
     event.preventDefault();
     const guestName = name.trim(),
@@ -50,25 +52,35 @@ export function BookingForm({
       guestName,
       guestEmail,
     };
-    const fingerprint = JSON.stringify(input);
-    if (attempt.current?.fingerprint !== fingerprint)
-      attempt.current = { fingerprint, key: crypto.randomUUID() };
+    const attempt = { input, key: crypto.randomUUID() };
+    try {
+      saveAttempt(attempt);
+    } catch {
+      setError("Не удалось сохранить попытку в этой вкладке.");
+      return;
+    }
     setPending(true);
     setError("");
     try {
       const response = await createBooking(input, {
-        headers: { "Idempotency-Key": attempt.current.key },
+        headers: { "Idempotency-Key": attempt.key },
       });
-      if (response.status === 201) onSuccess(response.data);
-      else if (response.status === 409 && response.data.code === "SLOT_UNAVAILABLE") onConflict();
-      else if (response.status === 409 && response.data.code === "MEETING_TYPE_CHANGED")
+      if (response.status === 201) {
+        clearAttempt();
+        onSuccess(response.data);
+      } else if (response.status === 409 && response.data.code === "SLOT_UNAVAILABLE") {
+        clearAttempt();
+        onConflict();
+      } else if (response.status === 409 && response.data.code === "MEETING_TYPE_CHANGED") {
+        clearAttempt();
         onTypeChanged();
-      else if (response.status === 400) {
+      } else if (response.status === 400) {
+        clearAttempt();
         setErrors(response.data.fields ?? {});
         setError(response.data.message);
-      } else setError("Не удалось подтвердить запись. Повторите попытку с теми же данными.");
+      } else onUnknown(attempt);
     } catch {
-      setError("Не удалось получить ответ. Повторите попытку с теми же данными.");
+      onUnknown(attempt);
     } finally {
       setPending(false);
     }
