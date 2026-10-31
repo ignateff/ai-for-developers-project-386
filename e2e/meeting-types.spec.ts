@@ -107,17 +107,22 @@ test("owner edits and confirms deletion of a meeting type", async ({ page }) => 
   await page.getByLabel("Описание").fill("Исходное описание");
   await page.getByLabel("Длительность в минутах").fill("30");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
-  await page
+  const original = page
     .locator("article")
-    .filter({ has: page.getByRole("heading", { name: "Управление типом", exact: true }) })
-    .getByRole("button", { name: "Изменить", exact: true })
-    .click();
+    .filter({ has: page.getByRole("heading", { name: "Управление типом", exact: true }) });
+  const edit = original.getByRole("button", { name: "Изменить", exact: true });
+  await edit.focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(edit).toBeFocused();
+  await page.keyboard.press("Enter");
   await page.getByLabel("Название типа").fill("Обновлённый тип");
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Обновлённый тип", exact: true })).toBeVisible();
   const updated = page
     .locator("article")
     .filter({ has: page.getByRole("heading", { name: "Обновлённый тип", exact: true }) });
+  await expect(updated.getByRole("button", { name: "Изменить", exact: true })).toBeFocused();
   await updated.getByRole("button", { name: "Удалить", exact: true }).click();
   await expect(page.getByText(/Новые записи станут недоступны/)).toBeVisible();
   await page.getByRole("button", { name: "Отмена", exact: true }).click();

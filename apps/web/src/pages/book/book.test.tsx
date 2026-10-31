@@ -93,6 +93,25 @@ it("shows a retryable error when the list cannot be loaded", async () => {
   expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
 });
 
+it.each([
+  [[]],
+  [[{ id: "one", name: "Call", description: "Intro", durationMinutes: 30, version: 1 }]],
+])("hides cached admin list data after a failed refetch: %j", async (cached) => {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client.setQueryData(["meeting-types"], cached);
+  render(
+    <QueryClientProvider client={client}>
+      <MantineProvider>
+        <AdminTypesPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось загрузить типы встреч");
+  expect(screen.queryByText("Пока нет типов встреч")).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Call" })).not.toBeInTheDocument();
+});
+
 it("hides stale meeting types if refreshing the list after returning fails", async () => {
   let listRequests = 0;
   vi.stubGlobal(
@@ -395,6 +414,78 @@ it("allows editing and confirming deletion of a meeting type", async () => {
   await vi.waitFor(() =>
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true),
   );
+});
+
+it("refreshes a conflicting version without losing the edit draft", async () => {
+  const type = { id: "one", name: "Call", description: "Intro", durationMinutes: 30, version: 1 };
+  let lists = 0;
+  const versions: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PUT") {
+        versions.push(new Headers(init.headers).get("if-match") ?? "");
+        return versions.length === 1
+          ? new Response(null, { status: 412 })
+          : new Response(JSON.stringify({ ...type, version: 2 }), { status: 200 });
+      }
+      return new Response(JSON.stringify([{ ...type, version: ++lists === 1 ? 1 : 2 }]), {
+        status: 200,
+      });
+    }),
+  );
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MantineProvider>
+        <AdminTypesPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Изменить" }));
+  fireEvent.change(await screen.findByLabelText("Название типа"), { target: { value: "Draft" } });
+  fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Обновить версию" }));
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Сохранить" })).toBeEnabled());
+  expect(screen.getByLabelText("Название типа")).toHaveValue("Draft");
+  fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+  await vi.waitFor(() => expect(versions).toEqual(['"1"', '"2"']));
+});
+
+it("does not close a reopened creation dialog when an earlier request succeeds", async () => {
+  let resolveCreate!: (response: Response) => void;
+  let lists = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST")
+        return new Promise<Response>((resolve) => {
+          resolveCreate = resolve;
+        });
+      lists++;
+      return new Response("[]", { status: 200 });
+    }),
+  );
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MantineProvider>
+        <AdminTypesPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  await screen.findByText("Пока нет типов встреч");
+  fireEvent.click(screen.getByRole("button", { name: "Добавить тип встречи" }));
+  fireEvent.change(await screen.findByLabelText("Название"), { target: { value: "First" } });
+  fireEvent.change(screen.getByLabelText("Описание"), { target: { value: "Description" } });
+  fireEvent.change(screen.getByLabelText("Длительность в минутах"), { target: { value: "30" } });
+  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
+  await vi.waitFor(() => expect(resolveCreate).toBeDefined());
+  fireEvent.click(screen.getByRole("button", { name: "Отмена" }));
+  fireEvent.click(screen.getByRole("button", { name: "Добавить тип встречи" }));
+  fireEvent.change(await screen.findByLabelText("Название"), { target: { value: "Second draft" } });
+  resolveCreate(new Response(JSON.stringify({ id: "one" }), { status: 201 }));
+  await vi.waitFor(() => expect(lists).toBeGreaterThan(1));
+  await vi.waitFor(() => expect(screen.getByLabelText("Название")).toHaveValue("Second draft"));
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
 });
 
 it("disables changing the meeting type while the booking request is in flight", async () => {

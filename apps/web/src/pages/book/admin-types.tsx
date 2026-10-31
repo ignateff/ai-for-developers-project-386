@@ -1,5 +1,5 @@
 import { Modal } from "@mantine/core";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { meetingTypesCreate, meetingTypesList } from "../../../../../generated/sdk/client";
 
@@ -9,6 +9,7 @@ import { ManageType } from "./manage-type";
 export function AdminTypesPage() {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const dialogSession = useRef(0);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
@@ -23,16 +24,26 @@ export function AdminTypesPage() {
     },
   });
   const create = useMutation({
-    mutationFn: async (input: { name: string; description: string; durationMinutes: number }) => {
+    mutationFn: async ({
+      session: _session,
+      ...input
+    }: {
+      name: string;
+      description: string;
+      durationMinutes: number;
+      session: number;
+    }) => {
       const response = await meetingTypesCreate(input);
       if (response.status !== 201) throw new Error("Could not create meeting type");
       return response.data;
     },
-    onSuccess: async () => {
-      setCreating(false);
-      setName("");
-      setDescription("");
-      setDuration("");
+    onSuccess: async (_data, input) => {
+      if (input.session === dialogSession.current) {
+        setCreating(false);
+        setName("");
+        setDescription("");
+        setDuration("");
+      }
       await queryClient.invalidateQueries({ queryKey: ["meeting-types"] });
     },
   });
@@ -46,7 +57,12 @@ export function AdminTypesPage() {
     } = validateType(name, description, duration);
     setErrors(next);
     if (!Object.keys(next).length)
-      create.mutate({ name: cleanName, description: cleanDescription, durationMinutes });
+      create.mutate({
+        name: cleanName,
+        description: cleanDescription,
+        durationMinutes,
+        session: dialogSession.current,
+      });
   }
   return (
     <section className="container booking" aria-label="Типы встреч">
@@ -58,6 +74,7 @@ export function AdminTypesPage() {
         type="button"
         className="btn btn-accent admin-add"
         onClick={() => {
+          dialogSession.current++;
           setErrors({});
           create.reset();
           setCreating(true);
@@ -74,30 +91,31 @@ export function AdminTypesPage() {
           </button>
         </div>
       )}
-      {list.data?.length === 0 && (
+      {!list.isError && list.data?.length === 0 && (
         <div className="type-empty">
           <p>Пока нет типов встреч</p>
           <p>Добавьте первый тип встречи, чтобы гости могли записаться.</p>
         </div>
       )}
       <div className="type-list">
-        {list.data?.map((item) => (
-          <article key={item.id} className="card">
-            <h2 id={`meeting-type-${item.id}`} className="type-card-name">
-              {item.name}
-            </h2>
-            <p className="type-card-description">{item.description}</p>
-            <p className="type-card-duration">{item.durationMinutes} мин.</p>
-            <div className="type-card-actions">
-              <ManageType
-                type={item}
-                refresh={() => {
-                  void list.refetch();
-                }}
-              />
-            </div>
-          </article>
-        ))}
+        {!list.isError &&
+          list.data?.map((item) => (
+            <article key={item.id} className="card">
+              <h2 id={`meeting-type-${item.id}`} className="type-card-name">
+                {item.name}
+              </h2>
+              <p className="type-card-description">{item.description}</p>
+              <p className="type-card-duration">{item.durationMinutes} мин.</p>
+              <div className="type-card-actions">
+                <ManageType
+                  type={item}
+                  refresh={() => {
+                    void list.refetch();
+                  }}
+                />
+              </div>
+            </article>
+          ))}
         <Modal opened={creating} onClose={() => setCreating(false)} title="Создать тип встречи">
           <form onSubmit={submit} noValidate>
             <div className="form-fields">

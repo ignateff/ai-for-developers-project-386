@@ -9,10 +9,10 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 const DESKTOP = { width: 1400, height: 900 };
 const NARROW = { width: 390, height: 844 };
 
-async function createType(request: APIRequestContext) {
+async function createType(request: APIRequestContext, name = "Интервью") {
   const response = await request.post("/api/meeting-types", {
     data: {
-      name: "Интервью",
+      name,
       description: "Познакомиться и обсудить задачи",
       durationMinutes: 30,
     },
@@ -67,9 +67,11 @@ test("booking type list, empty state", async ({ page }) => {
 
 test("guest meeting types on desktop and narrow screens", async ({ page, request }) => {
   await createType(request);
+  await createType(request, "Консультация");
   await page.setViewportSize(DESKTOP);
   await page.goto("/book");
   await expect(page.getByRole("heading", { name: "Интервью" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Консультация" })).toBeVisible();
   await settle(page);
   await expect(page).toHaveScreenshot("guest-types-desktop.png", {
     fullPage: true,
