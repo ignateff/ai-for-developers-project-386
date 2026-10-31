@@ -4,6 +4,37 @@
  * Call Calendar API
  * OpenAPI spec version: 0.0.0
  */
+export type ApiErrorFields = {[key: string]: string};
+
+export interface ApiError {
+  code: string;
+  message: string;
+  fields?: ApiErrorFields;
+}
+
+export interface MeetingTypeInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  description: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  durationMinutes: number;
+}
+
+export type MeetingType = MeetingTypeInput & {
+  id: string;
+  version: number;
+};
+
 export type Health200Status = typeof Health200Status[keyof typeof Health200Status];
 
 
@@ -51,4 +82,127 @@ export const health = async ( options?: RequestInit): Promise<healthResponse> =>
 
   const data: healthResponse['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as healthResponse
+}
+
+
+
+export type meetingTypesListResponse200 = {
+  data: MeetingType[]
+  status: 200
+}
+
+export type meetingTypesListResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type meetingTypesListResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type meetingTypesListResponseSuccess = (meetingTypesListResponse200) & {
+  headers: Headers;
+};
+export type meetingTypesListResponseError = (meetingTypesListResponse500 | meetingTypesListResponse503) & {
+  headers: Headers;
+};
+
+export type meetingTypesListResponse = (meetingTypesListResponseSuccess | meetingTypesListResponseError)
+
+export const getMeetingTypesListUrl = () => {
+
+
+
+
+  return `/api/meeting-types`
+}
+
+export const meetingTypesList = async ( options?: RequestInit): Promise<meetingTypesListResponse> => {
+
+  const res = await fetch(getMeetingTypesListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: meetingTypesListResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as meetingTypesListResponse
+}
+
+
+
+export type meetingTypesCreateResponse201 = {
+  data: MeetingType
+  status: 201
+}
+
+export type meetingTypesCreateResponse400 = {
+  data: ApiError
+  status: 400
+}
+
+export type meetingTypesCreateResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type meetingTypesCreateResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type meetingTypesCreateResponseSuccess = (meetingTypesCreateResponse201) & {
+  headers: Headers;
+};
+export type meetingTypesCreateResponseError = (meetingTypesCreateResponse400 | meetingTypesCreateResponse500 | meetingTypesCreateResponse503) & {
+  headers: Headers;
+};
+
+export type meetingTypesCreateResponse = (meetingTypesCreateResponseSuccess | meetingTypesCreateResponseError)
+
+export const getMeetingTypesCreateUrl = () => {
+
+
+
+
+  return `/api/meeting-types`
+}
+
+export const meetingTypesCreate = async (meetingTypeInput: MeetingTypeInput, options?: RequestInit): Promise<meetingTypesCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getMeetingTypesCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(meetingTypeInput)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: meetingTypesCreateResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as meetingTypesCreateResponse
 }

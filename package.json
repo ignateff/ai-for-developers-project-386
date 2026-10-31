@@ -12,9 +12,12 @@
     "generate": "tsp compile contract/main.tsp && orval --config contract/orval.config.ts",
     "check:generated": "node scripts/check-generated.mjs",
     "db:generate": "pnpm --filter @calendar/api db:generate",
-    "db:migrate": "pnpm --filter @calendar/api db:migrate"
+    "db:migrate": "pnpm --filter @calendar/api db:migrate",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "24.19.2",
     "@typespec/compiler": "1.17.0",
     "@typespec/http": "1.17.0",

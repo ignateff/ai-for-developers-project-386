@@ -29,6 +29,17 @@ eval "packages=(${usage_packages?})"
 pnpm --filter "${usage_filter?}" add "${packages[@]}"
 '''
 
+[tasks."add:dev"]
+description = "Add a root development dependency"
+usage = '''
+arg "<packages>" var=#true
+'''
+run = '''
+#!/usr/bin/env bash
+eval "packages=(${usage_packages?})"
+pnpm add -Dw "${packages[@]}"
+'''
+
 [tasks.dev]
 description = "Start API and web dev servers (pitchfork daemons)"
 run = ["mise daemons start", "mise daemons ls"]
@@ -58,6 +69,12 @@ run = "pnpm run typecheck"
 [tasks.test]
 run = "pnpm run test"
 
+[tasks."test:e2e"]
+run = "pnpm run test:e2e"
+
+[tasks."test:e2e:install"]
+run = "pnpm run test:e2e:install"
+
 [tasks.build]
 run = "pnpm run build"
 
@@ -83,6 +100,7 @@ run = [
   "pnpm run format:check",
   "pnpm run typecheck",
   "pnpm run test",
+  "pnpm run test:e2e",
   "pnpm run check:generated",
   "pnpm run build",
   "jactionlint .github/workflows/ci.yml",

@@ -6,3 +6,9 @@ dist/
 .DS_Store
 coverage/
 .vitest/
+
+playwright-report/
+test-results/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

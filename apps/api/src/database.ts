@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "./schema.js";
 
 export function openDatabase(path: string) {
-  const sqlite = new Database(path);
+  const sqlite = new Database(path, { timeout: 250 });
   sqlite.exec("PRAGMA foreign_keys = ON");
   const db = drizzle(sqlite, { schema });
   try {

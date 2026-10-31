@@ -1,6 +1,6 @@
 import { buildApp } from "./app.js";
 
-const app = buildApp();
+const app = buildApp({ databasePath: process.env.DATABASE_PATH ?? "calendar.sqlite" });
 try {
   await app.listen({
     port: Number(process.env.PORT ?? 3000),

@@ -1,3 +1,7 @@
+import Database from "better-sqlite3";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import OpenAPIBackend from "openapi-backend";
@@ -33,6 +37,7 @@ test("detects real undocumented routes and a documented route without implementa
     const spec = {
       paths: {
         "/api/health": { get: {} },
+        "/api/meeting-types": { get: {}, post: {} },
         "/api/bookings/{id}": { get: {} },
         "/api/missing": { delete: {} },
         "/frontend": { get: {} },
@@ -67,5 +72,74 @@ test("health HTTP response conforms to the OpenAPI response schema", async () =>
     expect(validation.errors).toBeNull();
   } finally {
     await app.close();
+  }
+});
+
+test("meeting type success and validation responses conform to OpenAPI", async () => {
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  const app = buildApp();
+  try {
+    for (const [method, payload, status, operation] of [
+      ["GET", undefined, 200, "MeetingTypes_list"],
+      [
+        "POST",
+        { name: "Call", description: "Intro", durationMinutes: 30 },
+        201,
+        "MeetingTypes_create",
+      ],
+      ["POST", { name: "", description: "Intro", durationMinutes: 30 }, 400, "MeetingTypes_create"],
+    ] as const) {
+      const response = await app.inject({ method, url: "/api/meeting-types", payload });
+      expect(response.statusCode).toBe(status);
+      expect(api.validateResponse(response.json(), operation, status).errors).toBeNull();
+      if (status === 201) expect(response.headers.etag).toBeDefined();
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+test("database failures produce safe documented errors", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "calendar-contract-"));
+  const path = join(directory, "test.sqlite");
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  const app = buildApp({ databasePath: path });
+  const db = new Database(path);
+  try {
+    db.exec("BEGIN EXCLUSIVE");
+    const busyList = await app.inject({ method: "GET", url: "/api/meeting-types" });
+    expect(busyList.statusCode).toBe(503);
+    expect(api.validateResponse(busyList.json(), "MeetingTypes_list", 503).errors).toBeNull();
+    const busy = await app.inject({
+      method: "POST",
+      url: "/api/meeting-types",
+      payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+    });
+    expect(busy.statusCode).toBe(503);
+    expect(api.validateResponse(busy.json(), "MeetingTypes_create", 503).errors).toBeNull();
+    db.exec("ROLLBACK");
+    db.exec("DROP TABLE meeting_types");
+    for (const [method, operation] of [
+      ["GET", "MeetingTypes_list"],
+      ["POST", "MeetingTypes_create"],
+    ] as const) {
+      const response = await app.inject({
+        method,
+        url: "/api/meeting-types",
+        payload:
+          method === "POST"
+            ? { name: "Call", description: "Intro", durationMinutes: 30 }
+            : undefined,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(response.body).not.toContain("meeting_types");
+      expect(api.validateResponse(response.json(), operation, 500).errors).toBeNull();
+    }
+  } finally {
+    db.close();
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
   }
 });
