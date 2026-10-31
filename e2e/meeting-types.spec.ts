@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test("owner creates a meeting type that guests can see", async ({ page }) => {
-  await page.goto("/book");
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Добавить тип встречи" }).click();
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
   await expect(page.getByText("Введите название до 100 символов")).toBeVisible();
   await page.getByLabel("Название").focus();
@@ -22,11 +23,13 @@ test("owner creates a meeting type that guests can see", async ({ page }) => {
 });
 
 test("guest selects a date and available time in UTC", async ({ page }) => {
-  await page.goto("/book");
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Добавить тип встречи" }).click();
   await page.getByLabel("Название").fill("Встреча для записи");
   await page.getByLabel("Описание").fill("Обсуждение");
   await page.getByLabel("Длительность в минутах").fill("60");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
+  await page.getByRole("link", { name: "Гость" }).click();
   await page.getByRole("button", { name: "Выбрать Встреча для записи" }).click();
   // The 14-day UTC window can span two months; count day buttons across both views.
   const dayButton = page.getByRole("button", { name: /\d{4}-\d{2}-\d{2} · \d+ свободно/ });
@@ -98,20 +101,37 @@ test("guest resolves a conflict without losing contacts and confirms a booking",
 });
 
 test("owner edits and confirms deletion of a meeting type", async ({ page }) => {
-  await page.goto("/book");
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Добавить тип встречи" }).click();
   await page.getByLabel("Название").fill("Управление типом");
   await page.getByLabel("Описание").fill("Исходное описание");
   await page.getByLabel("Длительность в минутах").fill("30");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
-  await page.getByRole("button", { name: "Изменить Управление типом" }).click();
+  await expect(page.getByRole("dialog", { name: "Создать тип встречи" })).toHaveCount(0);
+  const original = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: "Управление типом", exact: true }) });
+  const edit = original.getByRole("button", { name: "Изменить", exact: true });
+  await edit.focus();
+  await page.keyboard.press("Enter");
+  const editDialog = page.getByRole("dialog", { name: "Изменить Управление типом" });
+  await expect(editDialog).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await editDialog.getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(edit).toBeFocused();
+  await page.keyboard.press("Enter");
   await page.getByLabel("Название типа").fill("Обновлённый тип");
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toBeVisible();
-  await page.getByRole("button", { name: "Удалить Обновлённый тип" }).click();
+  await expect(page.getByRole("heading", { name: "Обновлённый тип", exact: true })).toBeVisible();
+  const updated = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: "Обновлённый тип", exact: true }) });
+  await expect(updated.getByRole("button", { name: "Изменить", exact: true })).toBeFocused();
+  await updated.getByRole("button", { name: "Удалить", exact: true }).click();
   await expect(page.getByText(/Новые записи станут недоступны/)).toBeVisible();
   await page.getByRole("button", { name: "Отмена", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toBeVisible();
-  await page.getByRole("button", { name: "Удалить Обновлённый тип" }).click();
+  await expect(page.getByRole("heading", { name: "Обновлённый тип", exact: true })).toBeVisible();
+  await updated.getByRole("button", { name: "Удалить", exact: true }).click();
   await page.getByRole("button", { name: "Подтвердить удаление" }).click();
-  await expect(page.getByRole("heading", { name: "Обновлённый тип" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Обновлённый тип", exact: true })).toHaveCount(0);
 });

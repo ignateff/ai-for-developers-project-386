@@ -1,8 +1,10 @@
+import { Modal } from "@mantine/core";
 import { validateType } from "./validate-type";
 import { useState, type FormEvent } from "react";
 import {
   meetingTypeResourceRemove,
   meetingTypeResourceUpdate,
+  meetingTypesList,
   type MeetingType,
 } from "../../../../../generated/sdk/client";
 
@@ -15,6 +17,27 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
   const [error, setError] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  const [version, setVersion] = useState(type.version);
+  const [conflict, setConflict] = useState(false);
+  async function refreshVersion() {
+    setPending(true);
+    try {
+      const response = await meetingTypesList();
+      if (response.status !== 200) throw new Error("Could not load meeting types");
+      const latest = response.data.find((item) => item.id === type.id);
+      if (!latest) {
+        setError("Тип встречи удалён. Скопируйте введённые данные и закройте окно.");
+      } else {
+        setVersion(latest.version);
+        setConflict(false);
+        setError("Версия обновлена. Проверьте данные перед сохранением.");
+      }
+    } catch {
+      setError("Не удалось обновить версию. Попробуйте ещё раз.");
+    } finally {
+      setPending(false);
+    }
+  }
   async function save(event: FormEvent) {
     event.preventDefault();
     const {
@@ -31,15 +54,14 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
       const response = await meetingTypeResourceUpdate(
         type.id,
         { name: cleanName, description: cleanDescription, durationMinutes: minutes },
-        { headers: { "If-Match": `"${type.version}"` } },
+        { headers: { "If-Match": `"${version}"` } },
       );
       if (response.status === 200) {
         setEditing(false);
         refresh();
       } else if (response.status === 412 || response.status === 404) {
-        setEditing(false);
-        setError("Тип встречи изменился или удалён. Список обновлён.");
-        refresh();
+        setConflict(true);
+        setError("Тип встречи изменился или удалён. Обновите версию, сохранив черновик.");
       } else setError("Не удалось сохранить изменения. Попробуйте ещё раз.");
     } catch {
       setError("Не удалось сохранить изменения. Попробуйте ещё раз.");
@@ -70,26 +92,36 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
   }
   return (
     <div className="type-manage">
-      {!editing && !confirm && (
+      {!confirm && (
         <>
           <button
             type="button"
             className="btn btn-subtle"
+            aria-describedby={`meeting-type-${type.id}`}
             onClick={() => {
+              setError("");
+              setVersion(type.version);
+              setConflict(false);
+              setFields({});
               setName(type.name);
               setDescription(type.description);
               setDuration(String(type.durationMinutes));
               setEditing(true);
             }}
           >
-            Изменить {type.name}
+            Изменить
           </button>
-          <button type="button" className="btn btn-danger" onClick={() => setConfirm(true)}>
-            Удалить {type.name}
+          <button
+            type="button"
+            className="btn btn-danger"
+            aria-describedby={`meeting-type-${type.id}`}
+            onClick={() => setConfirm(true)}
+          >
+            Удалить
           </button>
         </>
       )}
-      {editing && (
+      <Modal opened={editing} onClose={() => setEditing(false)} title={`Изменить ${type.name}`}>
         <form className="type-manage-form" onSubmit={(event) => void save(event)} noValidate>
           <div className="field">
             <label className="field-label" htmlFor={`edit-name-${type.id}`}>
@@ -135,7 +167,7 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
             {fields.duration && <p className="field-error">{fields.duration}</p>}
           </div>
           <div className="type-manage">
-            <button type="submit" className="btn btn-accent" disabled={pending}>
+            <button type="submit" className="btn btn-accent" disabled={pending || conflict}>
               Сохранить
             </button>
             <button type="button" className="btn btn-subtle" onClick={() => setEditing(false)}>
@@ -143,7 +175,22 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
             </button>
           </div>
         </form>
-      )}
+        {error && (
+          <p role="alert" className="field-error">
+            {error}
+          </p>
+        )}
+        {conflict && (
+          <button
+            type="button"
+            className="btn btn-subtle"
+            disabled={pending}
+            onClick={() => void refreshVersion()}
+          >
+            Обновить версию
+          </button>
+        )}
+      </Modal>
       {confirm && (
         <div>
           <p className="recovery-text">
@@ -164,7 +211,7 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
           </div>
         </div>
       )}
-      {error && (
+      {error && !editing && (
         <p role="alert" className="field-error">
           {error}
         </p>

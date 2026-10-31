@@ -92,3 +92,14 @@
     padding: 0 10px;
   }
 }
+
+.guest-admin-link {
+  display: none;
+}
+.layout:has(.guest-type-list) .guest-admin-link {
+  display: inline-flex;
+}
+
+.layout:has(.guest-type-list) .layout-header-content {
+  max-width: 1160px;
+}
