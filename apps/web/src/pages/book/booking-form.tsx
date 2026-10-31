@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
-import { createBooking, type Booking, type MeetingType } from "../../../../../generated/sdk/client";
+import { type Booking, type MeetingType } from "../../../../../generated/sdk/client";
 import { isValidEmail } from "./email";
-import { saveAttempt, clearAttempt, type Attempt } from "./attempt";
+import { prepareAttempt, sendAttempt, type Attempt } from "./attempt";
 
 export function BookingForm({
   type,
@@ -51,9 +51,9 @@ export function BookingForm({
       guestName,
       guestEmail,
     };
-    const attempt = { input, key: crypto.randomUUID() };
+    let attempt: Attempt;
     try {
-      saveAttempt(attempt);
+      attempt = prepareAttempt(input);
     } catch {
       setError("Не удалось сохранить попытку в этой вкладке.");
       return;
@@ -63,22 +63,16 @@ export function BookingForm({
     onPendingChange?.(true);
     setError("");
     try {
-      const response = await createBooking(input, {
-        headers: { "Idempotency-Key": attempt.key },
-      });
-      if (response.status === 201) {
-        clearAttempt();
-        onSuccess(response.data);
-      } else if (response.status === 409 && response.data.code === "SLOT_UNAVAILABLE") {
-        clearAttempt();
+      const result = await sendAttempt(attempt, "initial");
+      if (result.kind === "success") {
+        onSuccess(result.booking);
+      } else if (result.kind === "slot-unavailable") {
         onConflict();
-      } else if (response.status === 409 && response.data.code === "MEETING_TYPE_CHANGED") {
-        clearAttempt();
+      } else if (result.kind === "type-changed") {
         onTypeChanged();
-      } else if (response.status === 400) {
-        clearAttempt();
-        setErrors(response.data.fields ?? {});
-        setError(response.data.message);
+      } else if (result.kind === "validation") {
+        setErrors(result.fields);
+        setError(result.message);
       } else onUnknown(attempt);
     } catch {
       onUnknown(attempt);

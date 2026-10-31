@@ -1,26 +1,24 @@
 import { useState } from "react";
-import { createBooking, type Booking } from "../../../../../generated/sdk/client";
-import { clearAttempt, type Attempt } from "./attempt";
+import { type Booking } from "../../../../../generated/sdk/client";
+import { clearAttempt, sendAttempt, type Attempt } from "./attempt";
 import { BookingSuccess } from "./success";
 
 export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => void }) {
   const [pending, setPending] = useState(false);
   const [confirmForget, setConfirmForget] = useState(false);
   const [message, setMessage] = useState("");
+  const [rejected, setRejected] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
   async function retry() {
     setPending(true);
     setMessage("");
     try {
-      const response = await createBooking(attempt.input, {
-        headers: { "Idempotency-Key": attempt.key },
-      });
-      if (response.status === 201) {
-        clearAttempt();
-        setBooking(response.data);
-      } else if (response.status === 400 || response.status === 409) {
-        clearAttempt();
-        setMessage(`${response.data.message} Начните новую попытку.`);
+      const result = await sendAttempt(attempt, "retry");
+      if (result.kind === "success") {
+        setBooking(result.booking);
+      } else if (result.kind === "rejected") {
+        setRejected(true);
+        setMessage(`${result.message} Начните новую попытку.`);
       } else setMessage("Результат неизвестен. Повторите попытку или осознанно забудьте её.");
     } catch {
       setMessage("Результат неизвестен. Повторите попытку или осознанно забудьте её.");
@@ -64,7 +62,7 @@ export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => 
             {message}
           </p>
         )}
-        {loadable(message) ? (
+        {!rejected ? (
           <div className="recovery-actions">
             <button
               type="button"
@@ -119,7 +117,4 @@ export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => 
       </div>
     </section>
   );
-}
-function loadable(message: string) {
-  return !message.endsWith("Начните новую попытку.");
 }
