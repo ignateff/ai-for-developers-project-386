@@ -65,6 +65,23 @@ test("booking type list, empty state", async ({ page }) => {
   });
 });
 
+test("guest meeting types on desktop and narrow screens", async ({ page, request }) => {
+  await createType(request);
+  await page.setViewportSize(DESKTOP);
+  await page.goto("/book");
+  await expect(page.getByRole("heading", { name: "Интервью" })).toBeVisible();
+  await settle(page);
+  await expect(page).toHaveScreenshot("guest-types-desktop.png", {
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.setViewportSize(NARROW);
+  await expect(page).toHaveScreenshot("guest-types-narrow.png", {
+    fullPage: true,
+    animations: "disabled",
+  });
+});
+
 test("booking calendar without a selected date", async ({ page, request }) => {
   await page.setViewportSize(DESKTOP);
   await openBooking(page, request);

@@ -1,3 +1,4 @@
+import { Modal } from "@mantine/core";
 import { validateType } from "./validate-type";
 import { useState, type FormEvent } from "react";
 import {
@@ -37,9 +38,9 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
         setEditing(false);
         refresh();
       } else if (response.status === 412 || response.status === 404) {
-        setEditing(false);
-        setError("Тип встречи изменился или удалён. Список обновлён.");
-        refresh();
+        setError(
+          "Тип встречи изменился или удалён. Скопируйте введённые данные и обновите список.",
+        );
       } else setError("Не удалось сохранить изменения. Попробуйте ещё раз.");
     } catch {
       setError("Не удалось сохранить изменения. Попробуйте ещё раз.");
@@ -76,6 +77,8 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
             type="button"
             className="btn btn-subtle"
             onClick={() => {
+              setError("");
+              setFields({});
               setName(type.name);
               setDescription(type.description);
               setDuration(String(type.durationMinutes));
@@ -89,7 +92,7 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
           </button>
         </>
       )}
-      {editing && (
+      <Modal opened={editing} onClose={() => setEditing(false)} title={`Изменить ${type.name}`}>
         <form className="type-manage-form" onSubmit={(event) => void save(event)} noValidate>
           <div className="field">
             <label className="field-label" htmlFor={`edit-name-${type.id}`}>
@@ -143,7 +146,12 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
             </button>
           </div>
         </form>
-      )}
+        {error && (
+          <p role="alert" className="field-error">
+            {error}
+          </p>
+        )}
+      </Modal>
       {confirm && (
         <div>
           <p className="recovery-text">
@@ -164,7 +172,7 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
           </div>
         </div>
       )}
-      {error && (
+      {error && !editing && (
         <p role="alert" className="field-error">
           {error}
         </p>

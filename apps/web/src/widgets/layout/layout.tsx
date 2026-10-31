@@ -1,13 +1,10 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarClock } from "lucide-react";
 import "./layout.css";
 
-const navItems = [
-  { to: "/book", label: "Записаться" },
-  { to: "/events", label: "Предстоящие события" },
-];
-
 export function Layout() {
+  const { pathname } = useLocation();
+  const admin = pathname.startsWith("/admin");
   return (
     <div className="layout">
       <header className="layout-header">
@@ -17,15 +14,34 @@ export function Layout() {
             <span className="layout-brand-name">Calendar</span>
           </Link>
           <nav className="layout-nav" aria-label="Основная навигация">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `layout-nav-link${isActive ? " is-active" : ""}`}
-              >
-                {item.label}
-              </NavLink>
-            ))}
+            {admin ? (
+              <>
+                <NavLink
+                  to="/admin"
+                  end
+                  className={({ isActive }) => `layout-nav-link${isActive ? " is-active" : ""}`}
+                >
+                  Типы встреч
+                </NavLink>
+                <NavLink
+                  to="/admin/events"
+                  className={({ isActive }) => `layout-nav-link${isActive ? " is-active" : ""}`}
+                >
+                  Предстоящие события
+                </NavLink>
+                <Link to="/book" className="layout-nav-link">
+                  Гость
+                </Link>
+              </>
+            ) : pathname === "/book" ? (
+              <Link to="/admin" className="layout-nav-link guest-admin-link">
+                Админка
+              </Link>
+            ) : (
+              <Link to="/book" className="layout-nav-link">
+                Записаться
+              </Link>
+            )}
           </nav>
         </div>
       </header>

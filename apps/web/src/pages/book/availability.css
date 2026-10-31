@@ -567,3 +567,83 @@ button.calendar-day {
   font-size: 14px;
   color: var(--text-secondary);
 }
+
+.guest-intro {
+  margin: 40px 0 24px;
+}
+.guest-host {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.guest-avatar {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--bg-info);
+  border-radius: 14px;
+}
+.guest-host strong,
+.guest-host small {
+  display: block;
+}
+.guest-host small {
+  color: var(--text-secondary);
+  margin-top: 5px;
+}
+.guest-intro h1 {
+  font-size: 26px;
+  margin: 28px 0 12px;
+}
+.guest-intro p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.guest-types {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.guest-type-card {
+  position: relative;
+  min-height: 156px;
+}
+.guest-type-card .type-card-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+.guest-type-card .type-card-duration svg {
+  color: var(--accent);
+}
+.guest-arrow {
+  margin-left: auto;
+}
+.guest-card-button {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+.guest-type-card:has(.guest-card-button:hover) {
+  border-color: var(--accent);
+}
+@media (max-width: 700px) {
+  .guest-types {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guest-type-list {
+  max-width: 1160px;
+}
+.admin-add {
+  margin-bottom: 24px;
+}

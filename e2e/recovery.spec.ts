@@ -1,11 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function prepare(page: Page, title: string) {
-  await page.goto("/book");
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Добавить тип встречи" }).click();
   await page.getByLabel("Название").fill(title);
   await page.getByLabel("Описание").fill("Проверка потери ответа");
   await page.getByLabel("Длительность в минутах").fill("30");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
+  await page.getByRole("link", { name: "Гость" }).click();
   await page.getByRole("button", { name: `Выбрать ${title}` }).click();
   await page
     .getByRole("button", { name: /\d{4}-\d{2}-\d{2} · (?:[2-9]|[1-9]\d+) свободно/ })
