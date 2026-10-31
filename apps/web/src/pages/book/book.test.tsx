@@ -46,6 +46,26 @@ it("shows the empty state and validates the creation form", async () => {
   expect(screen.getByText("Введите название до 100 символов")).toBeInTheDocument();
 });
 
+it("does not expose owner management controls to guests", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response("[]", { status: 200, headers: { "content-type": "application/json" } }),
+    ),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Создать тип" })).not.toBeInTheDocument();
+});
+
 it("shows a retryable error when the list cannot be loaded", async () => {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
   render(
