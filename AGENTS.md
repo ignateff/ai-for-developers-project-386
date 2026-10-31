@@ -14,7 +14,7 @@
 ## Design references
 
 - For UI implementation and browser visual verification against the design, follow **`docs/design/README.md`**.
-- **Primary design source:** `docs/design/calendar-booking.pen` (Penpot JSON). Read the relevant frame from this file for exact specs: colors, typography, sizes, layout, spacing, and component states. The README provides the design-system summary and a mapping of frames to screens/issues.
+- **Primary design source:** `docs/design/calendar-booking.pen`. For the HTML fallback when Pencil cannot read the design, follow `docs/design/README.md`. The README also maps frames and exports to screens/issues.
 - **Screenshots in `docs/design/screenshots/` are outdated** — they exist only for historical context and should NOT be used for implementation reference.
 - Functional requirements live in linked GitHub Issues. If the design file disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
 

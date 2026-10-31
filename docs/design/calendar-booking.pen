@@ -4,7 +4,7 @@
     {
       "type": "frame",
       "id": "kCCJd",
-      "x": 3000,
+      "x": 7500,
       "y": 0,
       "name": "Палитра — бирюзовый",
       "clip": true,
@@ -2514,7 +2514,7 @@
     {
       "type": "frame",
       "id": "mpPnb",
-      "x": 3000,
+      "x": 7500,
       "y": 1000,
       "name": "Тёмная — бирюзовый",
       "clip": true,
@@ -5024,7 +5024,7 @@
     {
       "type": "frame",
       "id": "QppD9",
-      "x": 4500,
+      "x": 3000,
       "y": 0,
       "name": "Светлая — Главная",
       "clip": true,
@@ -5079,7 +5079,8 @@
           "fill": "#617994",
           "content": "Записаться",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -5090,7 +5091,8 @@
           "fill": "#617994",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -5129,7 +5131,8 @@
           "width": 490,
           "content": "Выберите удобный день и свободное время, чтобы записаться на звонок.",
           "fontFamily": "Inter",
-          "fontSize": 17
+          "fontSize": 17,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -5234,7 +5237,8 @@
               "fill": "#617994",
               "content": "Доступные дни в календаре",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -5285,7 +5289,8 @@
               "fill": "#617994",
               "content": "Свободные слоты для встречи",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -5336,7 +5341,8 @@
               "fill": "#617994",
               "content": "Оставьте имя и электронную почту",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -5345,7 +5351,7 @@
     {
       "type": "frame",
       "id": "sBWAP",
-      "x": 6000,
+      "x": 9000,
       "y": 0,
       "name": "Светлая — Подтверждение записи",
       "clip": true,
@@ -5426,7 +5432,8 @@
           "fill": "#617994",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -5449,7 +5456,8 @@
           "fill": "#617994",
           "content": "Проверьте детали и оставьте свои данные",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -5486,7 +5494,8 @@
               "fill": "#617994",
               "content": "Ваш выбор",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -5511,7 +5520,8 @@
                   "fill": "#617994",
                   "content": "Выбранная дата",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -5550,7 +5560,8 @@
                   "fill": "#617994",
                   "content": "Выбранное время",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -5589,7 +5600,8 @@
                   "fill": "#617994",
                   "content": "Длительность",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -5626,7 +5638,8 @@
               "fill": "#617994",
               "content": "Время указано по Москве · UTC+3",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         },
@@ -5665,7 +5678,8 @@
               "fill": "#617994",
               "content": "Укажите данные участника встречи",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -5730,7 +5744,8 @@
                   "fill": "#617994",
                   "content": "Как к вам обращаться",
                   "fontFamily": "Inter",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -5769,7 +5784,8 @@
                   "fill": "#617994",
                   "content": "name@example.com",
                   "fontFamily": "Inter",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -5810,7 +5826,8 @@
               "fill": "#617994",
               "content": "Детали встречи будут отправлены на вашу почту",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -5819,7 +5836,7 @@
     {
       "type": "frame",
       "id": "l27Qs7",
-      "x": 7500,
+      "x": 10500,
       "y": 0,
       "name": "Светлая — Запись подтверждена",
       "clip": true,
@@ -5900,7 +5917,8 @@
           "fill": "#617994",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -5923,7 +5941,8 @@
           "fill": "#617994",
           "content": "Детали вашей встречи",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -5960,7 +5979,8 @@
               "fill": "#617994",
               "content": "Ваш выбор",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -5985,7 +6005,8 @@
                   "fill": "#617994",
                   "content": "Выбранная дата",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -6024,7 +6045,8 @@
                   "fill": "#617994",
                   "content": "Выбранное время",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -6063,7 +6085,8 @@
                   "fill": "#617994",
                   "content": "Длительность",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -6100,7 +6123,8 @@
               "fill": "#617994",
               "content": "Время указано по Москве · UTC+3",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         },
@@ -6167,7 +6191,8 @@
               "fill": "#617994",
               "content": "До встречи! Детали отправлены на вашу почту.",
               "fontFamily": "Inter",
-              "fontSize": 14
+              "fontSize": 14,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -6244,7 +6269,7 @@
     {
       "type": "frame",
       "id": "O1FNp",
-      "x": 9000,
+      "x": 12000,
       "y": 0,
       "name": "Светлая — Предстоящие события",
       "clip": true,
@@ -6313,7 +6338,8 @@
           "fill": "#617994",
           "content": "Записаться",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -6348,7 +6374,8 @@
           "fill": "#617994",
           "content": "Все запланированные встречи",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -6425,7 +6452,8 @@
               "fill": "#617994",
               "content": "demo@example.com",
               "fontFamily": "Inter",
-              "fontSize": 14
+              "fontSize": 14,
+              "fontWeight": "normal"
             },
             {
               "type": "icon",
@@ -6460,7 +6488,8 @@
               "fill": "#617994",
               "content": "Создано 27 марта 2026, 14:40",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -6497,8 +6526,8 @@
     {
       "type": "frame",
       "id": "yZwTY",
-      "x": 10500,
-      "y": 0,
+      "x": 3000,
+      "y": 1000,
       "name": "Тёмная — Главная",
       "clip": true,
       "width": 1400,
@@ -6552,7 +6581,8 @@
           "fill": "#A7B8CA",
           "content": "Записаться",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -6563,7 +6593,8 @@
           "fill": "#A7B8CA",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -6602,7 +6633,8 @@
           "width": 490,
           "content": "Выберите удобный день и свободное время, чтобы записаться на звонок.",
           "fontFamily": "Inter",
-          "fontSize": 17
+          "fontSize": 17,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -6707,7 +6739,8 @@
               "fill": "#A7B8CA",
               "content": "Доступные дни в календаре",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -6758,7 +6791,8 @@
               "fill": "#A7B8CA",
               "content": "Свободные слоты для встречи",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -6809,7 +6843,8 @@
               "fill": "#A7B8CA",
               "content": "Оставьте имя и электронную почту",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -6818,8 +6853,8 @@
     {
       "type": "frame",
       "id": "S47vtn",
-      "x": 12000,
-      "y": 0,
+      "x": 9000,
+      "y": 1000,
       "name": "Тёмная — Подтверждение записи",
       "clip": true,
       "width": 1400,
@@ -6899,7 +6934,8 @@
           "fill": "#A7B8CA",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -6922,7 +6958,8 @@
           "fill": "#A7B8CA",
           "content": "Проверьте детали и оставьте свои данные",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -6959,7 +6996,8 @@
               "fill": "#A7B8CA",
               "content": "Ваш выбор",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -6984,7 +7022,8 @@
                   "fill": "#A7B8CA",
                   "content": "Выбранная дата",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7023,7 +7062,8 @@
                   "fill": "#A7B8CA",
                   "content": "Выбранное время",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7062,7 +7102,8 @@
                   "fill": "#A7B8CA",
                   "content": "Длительность",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7099,7 +7140,8 @@
               "fill": "#A7B8CA",
               "content": "Время указано по Москве · UTC+3",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         },
@@ -7138,7 +7180,8 @@
               "fill": "#A7B8CA",
               "content": "Укажите данные участника встречи",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -7203,7 +7246,8 @@
                   "fill": "#A7B8CA",
                   "content": "Как к вам обращаться",
                   "fontFamily": "Inter",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -7242,7 +7286,8 @@
                   "fill": "#A7B8CA",
                   "content": "name@example.com",
                   "fontFamily": "Inter",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -7283,7 +7328,8 @@
               "fill": "#A7B8CA",
               "content": "Детали встречи будут отправлены на вашу почту",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -7292,8 +7338,8 @@
     {
       "type": "frame",
       "id": "lXKfm",
-      "x": 13500,
-      "y": 0,
+      "x": 10500,
+      "y": 1000,
       "name": "Тёмная — Запись подтверждена",
       "clip": true,
       "width": 1400,
@@ -7373,7 +7419,8 @@
           "fill": "#A7B8CA",
           "content": "Предстоящие события",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -7396,7 +7443,8 @@
           "fill": "#A7B8CA",
           "content": "Детали вашей встречи",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -7433,7 +7481,8 @@
               "fill": "#A7B8CA",
               "content": "Ваш выбор",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -7458,7 +7507,8 @@
                   "fill": "#A7B8CA",
                   "content": "Выбранная дата",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7497,7 +7547,8 @@
                   "fill": "#A7B8CA",
                   "content": "Выбранное время",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7536,7 +7587,8 @@
                   "fill": "#A7B8CA",
                   "content": "Длительность",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -7573,7 +7625,8 @@
               "fill": "#A7B8CA",
               "content": "Время указано по Москве · UTC+3",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             }
           ]
         },
@@ -7640,7 +7693,8 @@
               "fill": "#A7B8CA",
               "content": "До встречи! Детали отправлены на вашу почту.",
               "fontFamily": "Inter",
-              "fontSize": 14
+              "fontSize": 14,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -7717,8 +7771,8 @@
     {
       "type": "frame",
       "id": "wCZiM",
-      "x": 15000,
-      "y": 0,
+      "x": 12000,
+      "y": 1000,
       "name": "Тёмная — Предстоящие события",
       "clip": true,
       "width": 1400,
@@ -7786,7 +7840,8 @@
           "fill": "#A7B8CA",
           "content": "Записаться",
           "fontFamily": "Inter",
-          "fontSize": 14
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "text",
@@ -7821,7 +7876,8 @@
           "fill": "#A7B8CA",
           "content": "Все запланированные встречи",
           "fontFamily": "Inter",
-          "fontSize": 15
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
@@ -7898,7 +7954,8 @@
               "fill": "#A7B8CA",
               "content": "demo@example.com",
               "fontFamily": "Inter",
-              "fontSize": 14
+              "fontSize": 14,
+              "fontWeight": "normal"
             },
             {
               "type": "icon",
@@ -7933,7 +7990,8 @@
               "fill": "#A7B8CA",
               "content": "Создано 27 марта 2026, 14:40",
               "fontFamily": "Inter",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -7970,7 +8028,7 @@
     {
       "type": "frame",
       "id": "e0ybax",
-      "x": 16500,
+      "x": 6000,
       "y": 0,
       "name": "Светлая — Календарь без выбранной даты",
       "clip": true,
@@ -9992,8 +10050,8 @@
     {
       "type": "frame",
       "id": "DkYbF",
-      "x": 18000,
-      "y": 0,
+      "x": 6000,
+      "y": 1000,
       "name": "Тёмная — Календарь без выбранной даты",
       "clip": true,
       "width": 1400,
@@ -12006,6 +12064,664 @@
                   "fontWeight": "normal"
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "TnChd",
+      "x": 4500,
+      "y": 0,
+      "name": "Светлая — Выбор типа события",
+      "clip": true,
+      "width": 1400,
+      "height": 900,
+      "fill": "#F5FAF8",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ZOytd",
+          "x": 0,
+          "y": 0,
+          "name": "Верхняя панель",
+          "width": 1400,
+          "height": 64,
+          "fill": "#FFFFFF",
+          "stroke": "#D9E2EC",
+          "strokeWidth": 1,
+          "layout": "none"
+        },
+        {
+          "type": "icon",
+          "id": "nuAQq",
+          "x": 140,
+          "y": 22,
+          "name": "Значок календаря",
+          "width": 20,
+          "height": 20,
+          "icon": "calendar-clock",
+          "library": "lucide",
+          "fill": "#087F7A"
+        },
+        {
+          "type": "text",
+          "id": "zQ8Ey",
+          "x": 168,
+          "y": 22,
+          "name": "Название сервиса",
+          "fill": "#102039",
+          "content": "Calendar",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "T0cL9j",
+          "x": 981,
+          "y": 13,
+          "name": "Активный раздел",
+          "width": 108,
+          "height": 38,
+          "fill": "#E5F2EE",
+          "cornerRadius": 8,
+          "stroke": "#E5F2EE",
+          "strokeWidth": 1,
+          "layout": "none"
+        },
+        {
+          "type": "text",
+          "id": "zz55W",
+          "x": 994,
+          "y": 24,
+          "name": "Записаться",
+          "fill": "#102039",
+          "content": "Записаться",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "S6osn",
+          "x": 1100,
+          "y": 24,
+          "name": "Предстоящие события",
+          "fill": "#617994",
+          "content": "Предстоящие события",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "vgAuB",
+          "x": 140,
+          "y": 105,
+          "name": "Владелец и выбор события",
+          "width": 1120,
+          "height": 205,
+          "fill": "#FFFFFF",
+          "cornerRadius": 14,
+          "stroke": "#D9E2EC",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "WrN2z",
+              "x": 24,
+              "y": 24,
+              "name": "Аватар владельца",
+              "width": 56,
+              "height": 56,
+              "fill": "#EDF5F2",
+              "cornerRadius": 14,
+              "stroke": "#EDF5F2",
+              "strokeWidth": 1,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "KDk2o",
+                  "x": 16,
+                  "y": 16,
+                  "name": "Профиль",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "user-round",
+                  "library": "lucide",
+                  "fill": "#087F7A"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "lYH38",
+              "x": 96,
+              "y": 29,
+              "name": "Имя владельца",
+              "fill": "#102039",
+              "content": "Tota",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "WBoHH",
+              "x": 96,
+              "y": 53,
+              "name": "Роль",
+              "fill": "#617994",
+              "content": "Организатор",
+              "fontFamily": "Inter",
+              "fontSize": 13
+            },
+            {
+              "type": "text",
+              "id": "xfFZC",
+              "x": 24,
+              "y": 109,
+              "name": "Заголовок",
+              "fill": "#102039",
+              "content": "Выберите тип события",
+              "fontFamily": "Inter",
+              "fontSize": 26,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "Lz49P",
+              "x": 24,
+              "y": 153,
+              "name": "Подсказка",
+              "fill": "#617994",
+              "content": "Выберите встречу, чтобы открыть календарь и найти удобное время.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "n2eoQ",
+          "x": 140,
+          "y": 334,
+          "name": "Тип события — 15 минут",
+          "width": 548,
+          "height": 156,
+          "fill": "#FFFFFF",
+          "cornerRadius": 14,
+          "stroke": "#D9E2EC",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "DhLLs",
+              "x": 24,
+              "y": 26,
+              "name": "Название встречи",
+              "fill": "#102039",
+              "content": "Встреча 15 минут",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "D9wEOV",
+              "x": 24,
+              "y": 61,
+              "name": "Описание встречи",
+              "fill": "#617994",
+              "content": "Короткая встреча для быстрого разговора.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            },
+            {
+              "type": "icon",
+              "id": "qu8qy",
+              "x": 24,
+              "y": 108,
+              "name": "Продолжительность",
+              "width": 17,
+              "height": 17,
+              "icon": "clock-3",
+              "library": "lucide",
+              "fill": "#087F7A"
+            },
+            {
+              "type": "text",
+              "id": "pypJO",
+              "x": 49,
+              "y": 108,
+              "name": "Длительность",
+              "fill": "#617994",
+              "content": "15 минут",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "icon",
+              "id": "yLz6f",
+              "x": 500,
+              "y": 108,
+              "name": "Открыть календарь",
+              "width": 20,
+              "height": 20,
+              "icon": "arrow-right",
+              "library": "lucide",
+              "fill": "#087F7A"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "JhkLK",
+          "x": 712,
+          "y": 334,
+          "name": "Тип события — 30 минут",
+          "width": 548,
+          "height": 156,
+          "fill": "#FFFFFF",
+          "cornerRadius": 14,
+          "stroke": "#D9E2EC",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "btSJ4",
+              "x": 24,
+              "y": 26,
+              "name": "Название встречи",
+              "fill": "#102039",
+              "content": "Встреча 30 минут",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "L4IPqi",
+              "x": 24,
+              "y": 61,
+              "name": "Описание встречи",
+              "fill": "#617994",
+              "content": "Встреча для более подробного обсуждения.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            },
+            {
+              "type": "icon",
+              "id": "GMCiR",
+              "x": 24,
+              "y": 108,
+              "name": "Продолжительность",
+              "width": 17,
+              "height": 17,
+              "icon": "clock-3",
+              "library": "lucide",
+              "fill": "#087F7A"
+            },
+            {
+              "type": "text",
+              "id": "X8Qvx",
+              "x": 49,
+              "y": 108,
+              "name": "Длительность",
+              "fill": "#617994",
+              "content": "30 минут",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "icon",
+              "id": "d8onE",
+              "x": 500,
+              "y": 108,
+              "name": "Открыть календарь",
+              "width": 20,
+              "height": 20,
+              "icon": "arrow-right",
+              "library": "lucide",
+              "fill": "#087F7A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Oh4ZD",
+      "x": 4500,
+      "y": 1000,
+      "name": "Тёмная — Выбор типа события",
+      "clip": true,
+      "width": 1400,
+      "height": 900,
+      "fill": "#141B25",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "c5h2U",
+          "x": 0,
+          "y": 0,
+          "name": "Верхняя панель",
+          "width": 1400,
+          "height": 64,
+          "fill": "#1D2633",
+          "stroke": "#3A485A",
+          "strokeWidth": 1,
+          "layout": "none"
+        },
+        {
+          "type": "icon",
+          "id": "hvbgo",
+          "x": 140,
+          "y": 22,
+          "name": "Значок календаря",
+          "width": 20,
+          "height": 20,
+          "icon": "calendar-clock",
+          "library": "lucide",
+          "fill": "#45AFA2"
+        },
+        {
+          "type": "text",
+          "id": "ESvhJ",
+          "x": 168,
+          "y": 22,
+          "name": "Название сервиса",
+          "fill": "#EAF0F7",
+          "content": "Calendar",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "tFsXQ",
+          "x": 981,
+          "y": 13,
+          "name": "Активный раздел",
+          "width": 108,
+          "height": 38,
+          "fill": "#344355",
+          "cornerRadius": 8,
+          "stroke": "#344355",
+          "strokeWidth": 1,
+          "layout": "none"
+        },
+        {
+          "type": "text",
+          "id": "JYASD",
+          "x": 994,
+          "y": 24,
+          "name": "Записаться",
+          "fill": "#EAF0F7",
+          "content": "Записаться",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "a3Iny",
+          "x": 1100,
+          "y": 24,
+          "name": "Предстоящие события",
+          "fill": "#A7B8CA",
+          "content": "Предстоящие события",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "cSLZN",
+          "x": 140,
+          "y": 105,
+          "name": "Владелец и выбор события",
+          "width": 1120,
+          "height": 205,
+          "fill": "#1D2633",
+          "cornerRadius": 14,
+          "stroke": "#3A485A",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "lEcfM",
+              "x": 24,
+              "y": 24,
+              "name": "Аватар владельца",
+              "width": 56,
+              "height": 56,
+              "fill": "#293747",
+              "cornerRadius": 14,
+              "stroke": "#293747",
+              "strokeWidth": 1,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "mamzJ",
+                  "x": 16,
+                  "y": 16,
+                  "name": "Профиль",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "user-round",
+                  "library": "lucide",
+                  "fill": "#45AFA2"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "vEg9n",
+              "x": 96,
+              "y": 29,
+              "name": "Имя владельца",
+              "fill": "#EAF0F7",
+              "content": "Tota",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "W2aWfY",
+              "x": 96,
+              "y": 53,
+              "name": "Роль",
+              "fill": "#A7B8CA",
+              "content": "Организатор",
+              "fontFamily": "Inter",
+              "fontSize": 13
+            },
+            {
+              "type": "text",
+              "id": "MM9Hc",
+              "x": 24,
+              "y": 109,
+              "name": "Заголовок",
+              "fill": "#EAF0F7",
+              "content": "Выберите тип события",
+              "fontFamily": "Inter",
+              "fontSize": 26,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "b6adQ",
+              "x": 24,
+              "y": 153,
+              "name": "Подсказка",
+              "fill": "#A7B8CA",
+              "content": "Выберите встречу, чтобы открыть календарь и найти удобное время.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Mkv5R",
+          "x": 140,
+          "y": 334,
+          "name": "Тип события — 15 минут",
+          "width": 548,
+          "height": 156,
+          "fill": "#1D2633",
+          "cornerRadius": 14,
+          "stroke": "#3A485A",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "Nr5r1",
+              "x": 24,
+              "y": 26,
+              "name": "Название встречи",
+              "fill": "#EAF0F7",
+              "content": "Встреча 15 минут",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "W4oMme",
+              "x": 24,
+              "y": 61,
+              "name": "Описание встречи",
+              "fill": "#A7B8CA",
+              "content": "Короткая встреча для быстрого разговора.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            },
+            {
+              "type": "icon",
+              "id": "oyyDk",
+              "x": 24,
+              "y": 108,
+              "name": "Продолжительность",
+              "width": 17,
+              "height": 17,
+              "icon": "clock-3",
+              "library": "lucide",
+              "fill": "#45AFA2"
+            },
+            {
+              "type": "text",
+              "id": "frZJh",
+              "x": 49,
+              "y": 108,
+              "name": "Длительность",
+              "fill": "#A7B8CA",
+              "content": "15 минут",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "icon",
+              "id": "XibST",
+              "x": 500,
+              "y": 108,
+              "name": "Открыть календарь",
+              "width": 20,
+              "height": 20,
+              "icon": "arrow-right",
+              "library": "lucide",
+              "fill": "#45AFA2"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "F4Hazb",
+          "x": 712,
+          "y": 334,
+          "name": "Тип события — 30 минут",
+          "width": 548,
+          "height": 156,
+          "fill": "#1D2633",
+          "cornerRadius": 14,
+          "stroke": "#3A485A",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "A1BEOi",
+              "x": 24,
+              "y": 26,
+              "name": "Название встречи",
+              "fill": "#EAF0F7",
+              "content": "Встреча 30 минут",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "fTUwV",
+              "x": 24,
+              "y": 61,
+              "name": "Описание встречи",
+              "fill": "#A7B8CA",
+              "content": "Встреча для более подробного обсуждения.",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            },
+            {
+              "type": "icon",
+              "id": "n34A1N",
+              "x": 24,
+              "y": 108,
+              "name": "Продолжительность",
+              "width": 17,
+              "height": 17,
+              "icon": "clock-3",
+              "library": "lucide",
+              "fill": "#45AFA2"
+            },
+            {
+              "type": "text",
+              "id": "W3JBlQ",
+              "x": 49,
+              "y": 108,
+              "name": "Длительность",
+              "fill": "#A7B8CA",
+              "content": "30 минут",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "icon",
+              "id": "attFv",
+              "x": 500,
+              "y": 108,
+              "name": "Открыть календарь",
+              "width": 20,
+              "height": 20,
+              "icon": "arrow-right",
+              "library": "lucide",
+              "fill": "#45AFA2"
             }
           ]
         }
