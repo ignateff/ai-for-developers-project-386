@@ -22,8 +22,12 @@ These settings affect Playwright's servers only; they are not configuration for 
 
 Elements whose visible text is localized or formatted (dates, counts, times) get a stable `aria-label` carrying the machine value (e.g. an ISO date on calendar day buttons), and e2e selectors target role plus that stable name rather than the rendered text. When changing visible UI text, grep `e2e/` and `*.test.*` for the old string first.
 
+When a test switches between dialogs, wait for the previous dialog to close and scope actions to the active dialog. This avoids interacting with a closing dialog during its transition.
+
 ## Visual verification
 
 For UI work with a design reference, use the workflow in `docs/design/README.md`. Functional tests do not establish visual fidelity. Add or update visual regression tests for stable, representative screens and states when an approved design-matching baseline is available; capture deterministic viewport, data, time, fonts and browser. Review baseline changes against the design before accepting them. Do not approve the current UI as the baseline merely because a screenshot test passes.
+
+Use representative data that exercises the layout, including multiple items where they affect columns or spacing. Record separately which viewport sizes were compared with a design reference and which were only checked for regressions; report missing reference sizes as a limitation.
 
 `e2e/00-visual.spec.ts` holds the approved baselines for the screens in `docs/design/calendar-booking.pen` (desktop 1400×900 and narrow 390×844). Determinism comes from `CALENDAR_FIXED_NOW` (set in `playwright.config.ts`, window starts 2026-03-27 as in the design) and the bundled Inter font. The `00-` prefix matters: the file must run first because baselines assume a pristine in-memory database. Playwright keeps baselines per platform (`-darwin`, `-linux`); regenerate them with `mise run test:e2e:visual:update` for the current platform and `mise run test:e2e:visual:update:linux` for CI (requires Docker). Review every baseline against the `.pen` frames before committing.

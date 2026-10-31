@@ -20,7 +20,7 @@
 
 ## Worktrees
 
-- For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; installing shared Git hooks is not required for each worktree.
+- For an isolated checkout, use the `using-git-worktrees` skill when available. Run the install commands above in every worktree, including an integration worktree, before its checks or push; installing shared Git hooks is not required for each worktree.
 - Before an agent or its worktree is removed, verify its changes are committed on a reachable branch or saved in a verified patch outside temporary storage. Confirm the result is recoverable before cleanup.
 - The default API and web ports are 3000 and 5173; the Vite proxy targets API port 3000. Check for existing services before starting another copy. No parallel-port configuration is currently documented, so do not assume changing one port isolates the full application.
 - The scaffold does not require environment variables. If a later task needs ignored configuration, set it up explicitly without copying secrets automatically.
@@ -35,6 +35,10 @@
 - After pushing to `main`, verify the latest CI run with `gh run list` — a green run is part of finishing the task (the workflow cancels superseded runs, so judge the final pushed state).
 
 ## Agent skills
+
+- Preserve Matt Pocock's skills as supplied; propose project documentation, agent instructions, or tooling instead of modifications to those skills.
+- When delegating implementation, require completed code, tests, passing checks, and a commit, or a specific blocker; an intermediate failing test alone is not completion.
+- For background agents, use an available completion notification or blocking wait; if neither allows continued execution, report the pending work instead of polling.
 
 ### Issue tracker
 

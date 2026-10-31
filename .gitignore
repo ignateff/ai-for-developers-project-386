@@ -8,6 +8,7 @@ coverage/
 .vitest/
 
 playwright-report/
+.playwright-mcp/
 test-results/
 *.sqlite
 *.sqlite-shm
