@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Container, Text } from "@mantine/core";
+import { CalendarClock } from "lucide-react";
 import "./layout.css";
 
 const navItems = [
@@ -11,12 +11,10 @@ export function Layout() {
   return (
     <div className="layout">
       <header className="layout-header">
-        <Container size="lg" className="layout-header-content">
+        <div className="container layout-header-content">
           <Link to="/" className="layout-brand">
-            <span className="layout-brand-icon" aria-hidden="true">
-              ▦
-            </span>
-            <Text fw={700}>Calendar</Text>
+            <CalendarClock size={20} strokeWidth={2} className="layout-brand-icon" aria-hidden />
+            <span className="layout-brand-name">Calendar</span>
           </Link>
           <nav className="layout-nav" aria-label="Основная навигация">
             {navItems.map((item) => (
@@ -29,7 +27,7 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-        </Container>
+        </div>
       </header>
       <main className="layout-main">
         <Outlet />

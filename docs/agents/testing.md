@@ -1,15 +1,27 @@
 # Testing
 
-Where tests live today and what the next step is.
+`mise run check` runs lint, formatting, types, Vitest, Playwright, contract and generated-artifact checks, build, and workflow lint. CI runs the same check after installing Chromium.
 
-## Today
+## API
 
-- `apps/api` carries contract and smoke tests (`app.test.ts`, `contract.test.ts`). Every new API operation needs a contract test for each response scenario (see `docs/adr/0001-technology-stack.md`).
-- `apps/web` uses Vitest with jsdom and Testing Library (decision fixed at stack level in `docs/adr/0001-technology-stack.md`). Test files carry the `// @vitest-environment jsdom` pragma, so no per-project Vitest config is needed; root `pnpm run test` picks them up. Current coverage: the landing page (hero heading, CTA link to `/book`, availability list) and layout navigation hrefs (`apps/web/src/pages/main/main.test.tsx`, `apps/web/src/widgets/layout/layout.test.tsx`).
-- jsdom lacks `window.matchMedia`, which Mantine components consult; the test files provide a stub in `beforeAll`.
+`apps/api/src/contract.test.ts` validates real HTTP responses against OpenAPI. Add a contract test for each response scenario of every new operation, including distinct error scenarios sharing a status code. Tests named `contract.test.ts` or `*.contract.test.ts` must use real HTTP; `mise run check:contract-http` rejects `inject()` calls in those files. Reviewers must still check scenario coverage and test semantics. Other test files may use Fastify injection where real HTTP is not required by the specification.
 
-## Rules
+Integration tests use SQLite and controlled clocks and failures where the behavior requires them. For booking retries, exercise failures both before the request reaches the server and after persistence but before the response reaches the client.
 
-- Stubs without behaviour (currently `/book` and `/events`) get no tests; test state, logic, and routes.
-- Web tests run through the regular `mise run check`, so one command covers both apps locally and in CI.
-- When the booking flow grows real behaviour, follow the contract-test discipline: each response scenario gets a test.
+## Web and end-to-end
+
+`apps/web` uses Vitest, jsdom and Testing Library for user-visible states and interactions. Tests requiring Mantine's `matchMedia` stub provide one in setup. `e2e/` uses Playwright and Chromium for the main booking, recovery, management and event-list flows.
+
+Playwright starts a dedicated in-memory API and web server and runs test files with one worker because they share that database. For concurrent worktrees, give each run a distinct pair of free ports, for example:
+
+```sh
+E2E_API_PORT=3320 E2E_WEB_PORT=5320 mise run test:e2e
+```
+
+These settings affect Playwright's servers only; they are not configuration for the regular `mise run dev` daemons. Install the browser with `mise run test:e2e:install` when needed.
+
+## Visual verification
+
+For UI work with a design reference, use the workflow in `docs/design/README.md`. Functional tests do not establish visual fidelity. Add or update visual regression tests for stable, representative screens and states when an approved design-matching baseline is available; capture deterministic viewport, data, time, fonts and browser. Review baseline changes against the design before accepting them. Do not approve the current UI as the baseline merely because a screenshot test passes.
+
+`e2e/00-visual.spec.ts` holds the approved baselines for the screens in `docs/design/calendar-booking.pen` (desktop 1400×900 and narrow 390×844). Determinism comes from `CALENDAR_FIXED_NOW` (set in `playwright.config.ts`, window starts 2026-03-27 as in the design) and the bundled Inter font. The `00-` prefix matters: the file must run first because baselines assume a pristine in-memory database. Playwright keeps baselines per platform (`-darwin`, `-linux`); generate missing platform baselines with `pnpm exec playwright test e2e/00-visual.spec.ts --update-snapshots`, for Linux inside `mcr.microsoft.com/playwright:<version>-noble`, and review every baseline against the `.pen` frames before committing.

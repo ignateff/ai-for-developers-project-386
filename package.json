@@ -10,9 +10,16 @@
     "test": "vitest run",
     "build": "pnpm -r --if-present build",
     "generate": "tsp compile contract/main.tsp && orval --config contract/orval.config.ts",
-    "check:generated": "node scripts/check-generated.mjs"
+    "check:generated": "node scripts/check-generated.mjs",
+    "db:generate": "pnpm --filter @calendar/api db:generate",
+    "db:migrate": "pnpm --filter @calendar/api db:migrate",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "check:contract-http": "node scripts/check-contract-http.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "^8.0.10",
+    "@playwright/test": "^1.64.1",
     "@types/node": "24.19.2",
     "@typespec/compiler": "1.17.0",
     "@typespec/http": "1.17.0",
@@ -26,5 +33,13 @@
     "vitest": "5.0.5",
     "yaml": "2.9.1"
   },
-  "packageManager": "pnpm@10.19.0"
+  "packageManager": "pnpm@10.19.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  }
 }

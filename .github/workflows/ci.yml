@@ -22,4 +22,5 @@ jobs:
         with:
           version: 2026.10.23
       - run: pnpm install --frozen-lockfile
+      - run: mise run test:e2e:install
       - run: mise run check
