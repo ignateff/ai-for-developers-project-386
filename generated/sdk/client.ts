@@ -22,6 +22,35 @@ export interface AvailabilityResponse {
   days: AvailabilityDay[];
 }
 
+export interface Booking {
+  id: string;
+  meetingTypeId: string;
+  meetingTypeName: string;
+  meetingTypeDescription: string;
+  meetingTypeDurationMinutes: number;
+  startsAt: string;
+  endsAt: string;
+  guestName: string;
+  guestEmail: string;
+  createdAt: string;
+}
+
+export interface BookingInput {
+  meetingTypeId: string;
+  meetingTypeVersion: number;
+  startsAt: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  guestName: string;
+  /**
+     * @minLength 1
+     * @maxLength 254
+     */
+  guestEmail: string;
+}
+
 export interface MeetingTypeInput {
   /**
      * @minLength 1
@@ -70,6 +99,82 @@ export type Health200 = {
 export type AvailabilitySlotsParams = {
 date: string;
 };
+
+export type createBookingResponse201 = {
+  data: Booking
+  status: 201
+}
+
+export type createBookingResponse400 = {
+  data: ApiError
+  status: 400
+}
+
+export type createBookingResponse409 = {
+  data: ApiError
+  status: 409
+}
+
+export type createBookingResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type createBookingResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type createBookingResponseSuccess = (createBookingResponse201) & {
+  headers: Headers;
+};
+export type createBookingResponseError = (createBookingResponse400 | createBookingResponse409 | createBookingResponse500 | createBookingResponse503) & {
+  headers: Headers;
+};
+
+export type createBookingResponse = (createBookingResponseSuccess | createBookingResponseError)
+
+export const getCreateBookingUrl = () => {
+
+
+
+
+  return `/api/bookings`
+}
+
+export const createBooking = async (bookingInput: BookingInput, options?: RequestInit): Promise<createBookingResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCreateBookingUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(bookingInput)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createBookingResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createBookingResponse
+}
+
+
 
 export type healthResponse200 = {
   data: Health200

@@ -38,6 +38,7 @@ test("detects real undocumented routes and a documented route without implementa
       paths: {
         "/api/health": { get: {} },
         "/api/meeting-types": { get: {}, post: {} },
+        "/api/bookings": { post: {} },
         "/api/meeting-types/{id}/availability": { get: {} },
         "/api/meeting-types/{id}/slots": { get: {} },
         "/api/bookings/{id}": { get: {} },
@@ -202,5 +203,57 @@ test("availability success and client errors conform to OpenAPI", async () => {
     }
   } finally {
     await app.close();
+  }
+});
+
+test("booking responses and required no-store header match OpenAPI", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "booking-contract-"));
+  const path = join(directory, "db.sqlite");
+  const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:00:00Z") });
+  const db = new Database(path);
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  try {
+    const type = (
+      await app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      })
+    ).json();
+    const payload = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: 1,
+      startsAt: "2026-10-30T09:00:00.000Z",
+      guestName: "Guest",
+      guestEmail: "g@example.com",
+    };
+    const send = (data: object, key: string) =>
+      app.inject({
+        method: "POST",
+        url: "/api/bookings",
+        payload: data,
+        headers: { "idempotency-key": key },
+      });
+    async function validate(response: Awaited<ReturnType<typeof send>>, status: number) {
+      expect(response.statusCode).toBe(status);
+      expect(api.validateResponse(response.json(), "createBooking", status).errors).toBeNull();
+      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.body).not.toContain("secret-key");
+    }
+    await validate(await send({ ...payload, guestEmail: "bad" }, "bad"), 400);
+    await validate(await send(payload, "secret-key"), 201);
+    await validate(await send(payload, "different-key"), 409);
+    db.exec("BEGIN IMMEDIATE");
+    await validate(await send({ ...payload, startsAt: "2026-10-30T10:00:00.000Z" }, "busy"), 503);
+    db.exec("ROLLBACK");
+    db.exec("DROP TABLE bookings");
+    const failure = await send(payload, "error");
+    await validate(failure, 500);
+    expect(failure.body).not.toContain("bookings");
+  } finally {
+    db.close();
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
   }
 });

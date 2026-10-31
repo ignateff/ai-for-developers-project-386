@@ -1,0 +1,244 @@
+import { expect, it } from "vitest";
+import { buildApp } from "./app.js";
+
+it("creates a booking and safely replays normalized input", async () => {
+  const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });
+  try {
+    const type = (
+      await app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      })
+    ).json();
+    const payload = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: 1,
+      startsAt: "2026-10-30T09:00:00.000Z",
+      guestName: " Alice ",
+      guestEmail: " a@example.com ",
+    };
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/bookings",
+      headers: { "idempotency-key": "attempt-1" },
+      payload,
+    });
+    expect(first.statusCode).toBe(201);
+    expect(first.headers["cache-control"]).toBe("no-store");
+    expect(first.json()).toMatchObject({
+      meetingTypeName: "Call",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+      startsAt: "2026-10-30T09:00:00.000Z",
+      endsAt: "2026-10-30T09:30:00.000Z",
+    });
+    const retry = await app.inject({
+      method: "POST",
+      url: "/api/bookings",
+      headers: { "idempotency-key": "attempt-1" },
+      payload: { ...payload, guestName: "Alice", guestEmail: "a@example.com" },
+    });
+    expect(retry.statusCode).toBe(201);
+    expect(retry.json()).toEqual(first.json());
+  } finally {
+    await app.close();
+  }
+});
+
+it("rejects invalid contacts, invalid slots and reuse with changed data", async () => {
+  const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });
+  try {
+    const type = (
+      await app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      })
+    ).json();
+    const payload = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: 1,
+      startsAt: "2026-10-30T09:00:00.000Z",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+    };
+    const send = (data: object, key = "key") =>
+      app.inject({
+        method: "POST",
+        url: "/api/bookings",
+        headers: { "idempotency-key": key },
+        payload: data,
+      });
+    const invalid = await send({
+      ...payload,
+      guestName: " ",
+      guestEmail: "wrong",
+      startsAt: "2026-02-30T09:00:00Z",
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json().fields).toHaveProperty("guestName");
+    expect(invalid.json().fields).toHaveProperty("guestEmail");
+    expect(invalid.json().fields).toHaveProperty("startsAt");
+    expect((await app.inject({ method: "POST", url: "/api/bookings", payload })).statusCode).toBe(
+      400,
+    );
+    expect((await send({ ...payload, startsAt: "2026-10-30T09:15:00.000Z" })).json().code).toBe(
+      "SLOT_UNAVAILABLE",
+    );
+    expect((await send({ ...payload, startsAt: "2026-10-31T09:00:00.000Z" })).json().code).toBe(
+      "SLOT_UNAVAILABLE",
+    );
+    expect((await send({ ...payload, meetingTypeVersion: 2 })).json().code).toBe(
+      "MEETING_TYPE_CHANGED",
+    );
+    expect((await send(payload)).statusCode).toBe(201);
+    expect((await send({ ...payload, guestName: "Bob" })).json().code).toBe(
+      "IDEMPOTENCY_KEY_REUSED",
+    );
+    expect((await send(payload, "another-key")).json().code).toBe("SLOT_UNAVAILABLE");
+    expect(
+      (await send({ ...payload, startsAt: "2026-10-30T09:30:00.000Z" }, "adjacent-key")).statusCode,
+    ).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+it("serializes competing requests on independent SQLite connections and permits safe replay", async () => {
+  const { fork } = await import("node:child_process");
+  const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = mkdtempSync(join(tmpdir(), "calendar-race-"));
+  const path = join(directory, "db.sqlite");
+  const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:00:00Z") });
+  const workers: import("node:child_process").ChildProcess[] = [];
+  try {
+    const makeType = async (name: string, durationMinutes: number) =>
+      (
+        await app.inject({
+          method: "POST",
+          url: "/api/meeting-types",
+          payload: { name, description: "Intro", durationMinutes },
+        })
+      ).json();
+    const a = await makeType("A", 60),
+      b = await makeType("B", 30);
+    for (let i = 0; i < 2; i++) {
+      const child = fork(
+        "apps/api/test-support/booking-worker.ts",
+        i === 0 ? [path, join(directory, "release")] : [path],
+        {
+          execArgv: ["--import", "tsx"],
+          stdio: ["ignore", "ignore", "inherit", "ipc"],
+        },
+      );
+      workers.push(child);
+      await new Promise<void>((resolve, reject) => {
+        child.once("message", () => resolve());
+        child.once("error", reject);
+      });
+    }
+    const payload = (id: string, startsAt: string) => ({
+      meetingTypeId: id,
+      meetingTypeVersion: 1,
+      startsAt,
+      guestName: "Guest",
+      guestEmail: "g@example.com",
+    });
+    const race = async (requests: { payload: object; key: string }[]) =>
+      Promise.all(
+        workers.map(
+          (worker, index) =>
+            new Promise<{ status: number; body: { code?: string; id?: string } }>((resolve) => {
+              worker.once("message", (message) =>
+                resolve(message as { status: number; body: { code?: string; id?: string } }),
+              );
+              worker.send(requests[index]);
+            }),
+        ),
+      );
+    const locked = new Promise<void>((resolve) => workers[0].once("message", () => resolve()));
+    workers[0].send({ payload: payload(a.id, "2026-10-30T09:00:00.000Z"), key: "race-a" });
+    await locked;
+    const competing = new Promise<{ status: number }>((resolve) =>
+      workers[1].once("message", (message) => resolve(message as { status: number })),
+    );
+    workers[1].send({ payload: payload(b.id, "2026-10-30T09:30:00.000Z"), key: "race-b" });
+    expect((await competing).status).toBe(503);
+    const first = new Promise<{ status: number }>((resolve) =>
+      workers[0].once("message", (message) => resolve(message as { status: number })),
+    );
+    writeFileSync(join(directory, "release"), "release");
+    expect((await first).status).toBe(201);
+    const retry = new Promise<{ status: number; body: { code: string } }>((resolve) =>
+      workers[1].once("message", (message) =>
+        resolve(message as { status: number; body: { code: string } }),
+      ),
+    );
+    workers[1].send({ payload: payload(b.id, "2026-10-30T09:30:00.000Z"), key: "race-b" });
+    expect(await retry).toMatchObject({ status: 409, body: { code: "SLOT_UNAVAILABLE" } });
+    const same = payload(a.id, "2026-10-30T11:00:00.000Z");
+    const repeated = await race([
+      { payload: same, key: "same-key" },
+      { payload: same, key: "same-key" },
+    ]);
+    expect(repeated.map((r) => r.status)).toEqual([201, 201]);
+    expect(repeated[0].body).toEqual(repeated[1].body);
+  } finally {
+    workers.forEach((worker) => worker.kill());
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+}, 15000);
+
+it("replays the original snapshot even after the type is deleted and the slot has passed", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { default: Database } = await import("better-sqlite3");
+  const directory = mkdtempSync(join(tmpdir(), "calendar-replay-"));
+  const path = join(directory, "db.sqlite");
+  let now = Date.parse("2026-10-30T08:00:00Z");
+  const app = buildApp({ databasePath: path, now: () => now });
+  const db = new Database(path);
+  try {
+    const type = (
+      await app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name: "Original", description: "Original description", durationMinutes: 30 },
+      })
+    ).json();
+    const payload = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: 1,
+      startsAt: "2026-10-30T09:00:00Z",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+    };
+    const send = (key: string) =>
+      app.inject({
+        method: "POST",
+        url: "/api/bookings",
+        headers: { "idempotency-key": key },
+        payload,
+      });
+    const first = await send("same-key");
+    expect(first.statusCode).toBe(201);
+    db.prepare("UPDATE meeting_types SET name = ?, version = 2, deleted = 1 WHERE id = ?").run(
+      "Changed",
+      type.id,
+    );
+    now = Date.parse("2026-10-31T12:00:00Z");
+    const replay = await send("same-key");
+    expect(replay.statusCode).toBe(201);
+    expect(replay.json()).toEqual(first.json());
+    expect((await send("new-key")).json().code).toBe("MEETING_TYPE_CHANGED");
+  } finally {
+    db.close();
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

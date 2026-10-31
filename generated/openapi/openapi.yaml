@@ -4,6 +4,57 @@ info:
   version: 0.0.0
 tags: []
 paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingInput'
   /api/health:
     get:
       operationId: health
@@ -206,6 +257,69 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AvailabilityDay'
+    Booking:
+      type: object
+      required:
+        - id
+        - meetingTypeId
+        - meetingTypeName
+        - meetingTypeDescription
+        - meetingTypeDurationMinutes
+        - startsAt
+        - endsAt
+        - guestName
+        - guestEmail
+        - createdAt
+      properties:
+        id:
+          type: string
+        meetingTypeId:
+          type: string
+        meetingTypeName:
+          type: string
+        meetingTypeDescription:
+          type: string
+        meetingTypeDurationMinutes:
+          type: integer
+          format: int32
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    BookingInput:
+      type: object
+      required:
+        - meetingTypeId
+        - meetingTypeVersion
+        - startsAt
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          type: string
+        meetingTypeVersion:
+          type: integer
+          format: int32
+        startsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          minLength: 1
+          maxLength: 254
     MeetingType:
       type: object
       required:

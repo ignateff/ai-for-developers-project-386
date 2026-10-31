@@ -1,0 +1,116 @@
+import { useRef, useState, type FormEvent } from "react";
+import { Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
+import { createBooking, type Booking, type MeetingType } from "../../../../../generated/sdk/client";
+
+export function BookingForm({
+  type,
+  startsAt,
+  name,
+  email,
+  setName,
+  setEmail,
+  onBack,
+  onConflict,
+  onTypeChanged,
+  onSuccess,
+}: {
+  type: MeetingType;
+  startsAt: string;
+  name: string;
+  email: string;
+  setName: (value: string) => void;
+  setEmail: (value: string) => void;
+  onBack: () => void;
+  onConflict: () => void;
+  onTypeChanged: () => void;
+  onSuccess: (booking: Booking) => void;
+}) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const guestName = name.trim(),
+      guestEmail = email.trim();
+    const next: Record<string, string> = {};
+    if (!guestName || [...guestName].length > 100) next.guestName = "Введите имя до 100 символов";
+    if (
+      !guestEmail ||
+      [...guestEmail].length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(guestEmail)
+    )
+      next.guestEmail = "Введите корректный email до 254 символов";
+    setErrors(next);
+    if (Object.keys(next).length || pending) return;
+    const input = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: type.version,
+      startsAt,
+      guestName,
+      guestEmail,
+    };
+    const fingerprint = JSON.stringify(input);
+    if (attempt.current?.fingerprint !== fingerprint)
+      attempt.current = { fingerprint, key: crypto.randomUUID() };
+    setPending(true);
+    setError("");
+    try {
+      const response = await createBooking(input, {
+        headers: { "Idempotency-Key": attempt.current.key },
+      });
+      if (response.status === 201) onSuccess(response.data);
+      else if (response.status === 409 && response.data.code === "SLOT_UNAVAILABLE") onConflict();
+      else if (response.status === 409 && response.data.code === "MEETING_TYPE_CHANGED")
+        onTypeChanged();
+      else if (response.status === 400) {
+        setErrors(response.data.fields ?? {});
+        setError(response.data.message);
+      } else setError("Не удалось подтвердить запись. Повторите попытку с теми же данными.");
+    } catch {
+      setError("Не удалось получить ответ. Повторите попытку с теми же данными.");
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <Paper withBorder radius="md" p="lg">
+      <Title order={3} size="h4">
+        Подтверждение записи
+      </Title>
+      <Text>
+        {type.name} · {startsAt.slice(0, 10)} {startsAt.slice(11, 16)} UTC
+      </Text>
+      <Button variant="subtle" onClick={onBack}>
+        Изменить время
+      </Button>
+      <form onSubmit={(event) => void submit(event)} noValidate>
+        <Stack mt="md">
+          <TextInput
+            label="Имя"
+            required
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+            error={errors.guestName}
+          />
+          <TextInput
+            label="Email"
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.currentTarget.value)}
+            error={errors.guestEmail}
+          />
+          {error && (
+            <Text role="alert" c="red">
+              {error}
+            </Text>
+          )}
+          <Button type="submit" loading={pending}>
+            Подтвердить запись
+          </Button>
+        </Stack>
+      </form>
+    </Paper>
+  );
+}

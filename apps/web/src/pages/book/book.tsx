@@ -11,6 +11,8 @@ import { Availability } from "./availability";
 
 export function BookPage() {
   const queryClient = useQueryClient();
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
   const [selectedType, setSelectedType] = useState<MeetingType | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -61,6 +63,10 @@ export function BookPage() {
     return (
       <Container size="lg" py="xl">
         <Availability
+          name={guestName}
+          email={guestEmail}
+          setName={setGuestName}
+          setEmail={setGuestEmail}
           type={selectedType}
           onBack={() => {
             setSelectedType(null);

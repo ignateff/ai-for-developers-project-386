@@ -39,3 +39,31 @@ interface Availability {
   @route("/availability") @get summary(@path id: string): AvailabilityResponse | { @statusCode statusCode: 404; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
   @route("/slots") @get slots(@path id: string, @query date: string): SlotsResponse | { @statusCode statusCode: 400; @body body: ApiError } | { @statusCode statusCode: 404; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
 }
+
+model BookingInput {
+  meetingTypeId: string;
+  meetingTypeVersion: int32;
+  startsAt: utcDateTime;
+  @minLength(1) @maxLength(100) guestName: string;
+  @minLength(1) @maxLength(254) guestEmail: string;
+}
+model Booking {
+  id: string;
+  meetingTypeId: string;
+  meetingTypeName: string;
+  meetingTypeDescription: string;
+  meetingTypeDurationMinutes: int32;
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+  guestName: string;
+  guestEmail: string;
+  createdAt: utcDateTime;
+}
+@route("/api/bookings")
+@post
+op createBooking(@header("Idempotency-Key") key: string, @body input: BookingInput):
+  { @statusCode statusCode: 201; @header("Cache-Control") cacheControl: string; @body body: Booking } |
+  { @statusCode statusCode: 400; @body body: ApiError } |
+  { @statusCode statusCode: 409; @body body: ApiError } |
+  { @statusCode statusCode: 500; @body body: ApiError } |
+  { @statusCode statusCode: 503; @body body: ApiError };
