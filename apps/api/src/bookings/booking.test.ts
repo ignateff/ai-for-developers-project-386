@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { buildApp } from "./app.js";
+import { buildApp } from "../app.js";
 
 it("creates a booking and safely replays normalized input", async () => {
   const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });

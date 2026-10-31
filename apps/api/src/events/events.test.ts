@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import { expect, it } from "vitest";
-import { buildApp } from "./app.js";
+import { buildApp } from "../app.js";
 
 it("returns only future bookings in chronological order with the original type and contacts", async () => {
   const directory = mkdtempSync(join(tmpdir(), "calendar-events-"));

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { buildApp } from "./app.js";
+import { buildApp } from "../app.js";
 
 it("conditionally updates and deletes a type while preserving booking snapshots", async () => {
   const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });

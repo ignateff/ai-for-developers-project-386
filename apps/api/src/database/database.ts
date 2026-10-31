@@ -9,10 +9,12 @@ export function openDatabase(path: string) {
   sqlite.exec("PRAGMA foreign_keys = ON");
   const db = drizzle(sqlite, { schema });
   try {
-    migrate(db, { migrationsFolder: fileURLToPath(new URL("../drizzle", import.meta.url)) });
+    migrate(db, { migrationsFolder: fileURLToPath(new URL("../../drizzle", import.meta.url)) });
   } catch (error) {
     sqlite.close();
     throw error;
   }
   return { db, close: () => sqlite.close() };
 }
+
+export type Storage = ReturnType<typeof openDatabase>;

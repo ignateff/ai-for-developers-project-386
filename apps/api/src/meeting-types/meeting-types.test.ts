@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { expect, it } from "vitest";
-import { buildApp } from "./app.js";
+import { buildApp } from "../app.js";
 
 it("creates normalized meeting types and keeps them across restarts", async () => {
   const dir = mkdtempSync(join(tmpdir(), "calendar-types-"));
