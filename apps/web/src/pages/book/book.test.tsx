@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MantineProvider } from "@mantine/core";
 import { BookPage } from "./book";
+import { AdminTypesPage } from "./admin-types";
 
 window.matchMedia ??= (query: string) =>
   ({
@@ -37,17 +38,46 @@ it("shows the empty state and validates the creation form", async () => {
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <MantineProvider>
+        <AdminTypesPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Добавить тип встречи" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Создать тип" }));
+  expect(screen.getByText("Введите название до 100 символов")).toBeInTheDocument();
+});
+
+it("does not expose owner management controls to guests", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response("[]", { status: 200, headers: { "content-type": "application/json" } }),
+      ),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
         <BookPage />
       </MantineProvider>
     </QueryClientProvider>,
   );
   expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
-  expect(screen.getByText("Введите название до 100 символов")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Создать тип" })).not.toBeInTheDocument();
 });
 
 it("shows a retryable error when the list cannot be loaded", async () => {
-  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue(new Response("[]", { status: 200 })),
+  );
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -58,7 +88,9 @@ it("shows a retryable error when the list cannot be loaded", async () => {
     </QueryClientProvider>,
   );
   expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось загрузить типы встреч");
-  expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
+  expect(screen.queryByText("Пока нет типов встреч")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Повторить" }));
+  expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
 });
 
 it("lets a guest select an available slot but not an occupied one", async () => {
@@ -119,23 +151,24 @@ it("accepts Unicode code points at the length limits and rejects values above th
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <MantineProvider>
-        <BookPage />
+        <AdminTypesPage />
       </MantineProvider>
     </QueryClientProvider>,
   );
   await screen.findByText("Пока нет типов встреч");
-  const name = screen.getByLabelText(/Название/);
+  fireEvent.click(screen.getByRole("button", { name: "Добавить тип встречи" }));
+  const name = await screen.findByLabelText(/Название/);
   const description = screen.getByLabelText(/Описание/);
   fireEvent.change(name, { target: { value: "😀".repeat(100) } });
   fireEvent.change(description, { target: { value: "😀".repeat(1000) } });
   fireEvent.change(screen.getByLabelText(/Длительность в минутах/), { target: { value: "30" } });
-  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Создать тип" }));
   expect(screen.queryByText("Введите название до 100 символов")).not.toBeInTheDocument();
   expect(screen.queryByText("Введите описание до 1000 символов")).not.toBeInTheDocument();
   await screen.findByRole("alert");
   fireEvent.change(name, { target: { value: "😀".repeat(101) } });
   fireEvent.change(description, { target: { value: "😀".repeat(1001) } });
-  fireEvent.click(screen.getByRole("button", { name: "Создать тип" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Создать тип" }));
   expect(screen.getByText("Введите название до 100 символов")).toBeInTheDocument();
   expect(screen.getByText("Введите описание до 1000 символов")).toBeInTheDocument();
 });
@@ -302,12 +335,12 @@ it("allows editing and confirming deletion of a meeting type", async () => {
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <MantineProvider>
-        <BookPage />
+        <AdminTypesPage />
       </MantineProvider>
     </QueryClientProvider>,
   );
   fireEvent.click(await screen.findByRole("button", { name: "Изменить Call" }));
-  fireEvent.change(screen.getByLabelText(/Название типа/), { target: { value: " " } });
+  fireEvent.change(await screen.findByLabelText(/Название типа/), { target: { value: " " } });
   fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
   expect(screen.getByLabelText(/Название типа/)).toHaveAttribute("aria-invalid", "true");
   fireEvent.change(screen.getByLabelText(/Название типа/), { target: { value: "Updated" } });

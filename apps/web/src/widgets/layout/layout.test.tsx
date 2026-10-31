@@ -40,11 +40,6 @@ describe("Layout navigation", () => {
     const bookLink = screen
       .getAllByRole("link", { name: "Записаться" })
       .find((link) => nav.contains(link));
-    const eventsLink = screen
-      .getAllByRole("link", { name: "Предстоящие события" })
-      .find((link) => nav.contains(link));
-
     expect(bookLink).toHaveAttribute("href", "/book");
-    expect(eventsLink).toHaveAttribute("href", "/events");
   });
 });
