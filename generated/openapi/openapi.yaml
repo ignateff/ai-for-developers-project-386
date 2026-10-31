@@ -86,6 +86,86 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MeetingTypeInput'
+  /api/meeting-types/{id}/availability:
+    get:
+      operationId: Availability_summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/meeting-types/{id}/slots:
+    get:
+      operationId: Availability_slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotsResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 components:
   schemas:
     ApiError:
@@ -102,6 +182,30 @@ components:
           type: object
           additionalProperties:
             type: string
+    AvailabilityDay:
+      type: object
+      required:
+        - date
+        - availableCount
+      properties:
+        date:
+          type: string
+        availableCount:
+          type: integer
+          format: int32
+    AvailabilityResponse:
+      type: object
+      required:
+        - version
+        - days
+      properties:
+        version:
+          type: integer
+          format: int32
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityDay'
     MeetingType:
       type: object
       required:
@@ -135,3 +239,31 @@ components:
           format: int32
           minimum: 1
           maximum: 2147483647
+    Slot:
+      type: object
+      required:
+        - startsAt
+        - endsAt
+        - available
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        available:
+          type: boolean
+    SlotsResponse:
+      type: object
+      required:
+        - version
+        - slots
+      properties:
+        version:
+          type: integer
+          format: int32
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slot'

@@ -29,3 +29,13 @@ interface MeetingTypes {
   @get list(): MeetingType[] | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
   @post create(@body input: MeetingTypeInput): { @statusCode statusCode: 201; @header etag: string; @body body: MeetingType } | { @statusCode statusCode: 400; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
 }
+
+model Slot { startsAt: utcDateTime; endsAt: utcDateTime; available: boolean; }
+model SlotsResponse { version: int32; slots: Slot[]; }
+model AvailabilityDay { date: string; availableCount: int32; }
+model AvailabilityResponse { version: int32; days: AvailabilityDay[]; }
+@route("/api/meeting-types/{id}")
+interface Availability {
+  @route("/availability") @get summary(@path id: string): AvailabilityResponse | { @statusCode statusCode: 404; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
+  @route("/slots") @get slots(@path id: string, @query date: string): SlotsResponse | { @statusCode statusCode: 400; @body body: ApiError } | { @statusCode statusCode: 404; @body body: ApiError } | { @statusCode statusCode: 500; @body body: ApiError } | { @statusCode statusCode: 503; @body body: ApiError };
+}

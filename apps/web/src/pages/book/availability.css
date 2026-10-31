@@ -1,0 +1,20 @@
+.availability-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.65fr 1.4fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+.availability-dates,
+.availability-slots {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.availability-slots {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 800px) {
+  .availability-grid {
+    grid-template-columns: 1fr;
+  }
+}

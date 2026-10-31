@@ -60,3 +60,49 @@ it("shows a retryable error when the list cannot be loaded", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось загрузить типы встреч");
   expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
 });
+
+it("lets a guest select an available slot but not an occupied one", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const data = url.endsWith("/availability")
+        ? { version: 1, days: [{ date: "2026-11-02", availableCount: 1 }] }
+        : url.includes("/slots?")
+          ? {
+              version: 1,
+              slots: [
+                {
+                  startsAt: "2026-11-02T09:00:00.000Z",
+                  endsAt: "2026-11-02T10:00:00.000Z",
+                  available: true,
+                },
+                {
+                  startsAt: "2026-11-02T10:00:00.000Z",
+                  endsAt: "2026-11-02T11:00:00.000Z",
+                  available: false,
+                },
+              ],
+            }
+          : [{ id: "one", name: "Call", description: "Intro", durationMinutes: 60, version: 1 }];
+      return new Response(JSON.stringify(data), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Выбрать Call" }));
+  fireEvent.click(await screen.findByRole("button", { name: /2026-11-02/ }));
+  expect(await screen.findByRole("button", { name: /10:00.*Занято/ })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "09:00 UTC" }));
+  expect(screen.getByRole("button", { name: "09:00 UTC" })).toHaveAttribute("aria-pressed", "true");
+});

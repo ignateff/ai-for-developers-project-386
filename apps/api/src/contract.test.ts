@@ -38,6 +38,8 @@ test("detects real undocumented routes and a documented route without implementa
       paths: {
         "/api/health": { get: {} },
         "/api/meeting-types": { get: {}, post: {} },
+        "/api/meeting-types/{id}/availability": { get: {} },
+        "/api/meeting-types/{id}/slots": { get: {} },
         "/api/bookings/{id}": { get: {} },
         "/api/missing": { delete: {} },
         "/frontend": { get: {} },
@@ -119,8 +121,31 @@ test("database failures produce safe documented errors", async () => {
     });
     expect(busy.statusCode).toBe(503);
     expect(api.validateResponse(busy.json(), "MeetingTypes_create", 503).errors).toBeNull();
+    for (const [url, operation] of [
+      ["/api/meeting-types/id/availability", "Availability_summary"],
+      [
+        "/api/meeting-types/id/slots?date=" + new Date().toISOString().slice(0, 10),
+        "Availability_slots",
+      ],
+    ] as const) {
+      const response = await app.inject({ method: "GET", url });
+      expect(response.statusCode).toBe(503);
+      expect(api.validateResponse(response.json(), operation, 503).errors).toBeNull();
+    }
     db.exec("ROLLBACK");
     db.exec("DROP TABLE meeting_types");
+    for (const [url, operation] of [
+      ["/api/meeting-types/id/availability", "Availability_summary"],
+      [
+        "/api/meeting-types/id/slots?date=" + new Date().toISOString().slice(0, 10),
+        "Availability_slots",
+      ],
+    ] as const) {
+      const response = await app.inject({ method: "GET", url });
+      expect(response.statusCode).toBe(500);
+      expect(response.body).not.toContain("meeting_types");
+      expect(api.validateResponse(response.json(), operation, 500).errors).toBeNull();
+    }
     for (const [method, operation] of [
       ["GET", "MeetingTypes_list"],
       ["POST", "MeetingTypes_create"],
@@ -141,5 +166,32 @@ test("database failures produce safe documented errors", async () => {
     db.close();
     await app.close();
     rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("availability success and client errors conform to OpenAPI", async () => {
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });
+  try {
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/meeting-types",
+      payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+    });
+    const id = created.json().id;
+    for (const [url, status, operation] of [
+      [`/api/meeting-types/${id}/availability`, 200, "Availability_summary"],
+      [`/api/meeting-types/${id}/slots?date=2026-10-30`, 200, "Availability_slots"],
+      [`/api/meeting-types/${id}/slots?date=2026-11-13`, 400, "Availability_slots"],
+      ["/api/meeting-types/missing/availability", 404, "Availability_summary"],
+      ["/api/meeting-types/missing/slots?date=2026-10-30", 404, "Availability_slots"],
+    ] as const) {
+      const response = await app.inject({ method: "GET", url });
+      expect(response.statusCode).toBe(status);
+      expect(api.validateResponse(response.json(), operation, status).errors).toBeNull();
+    }
+  } finally {
+    await app.close();
   }
 });

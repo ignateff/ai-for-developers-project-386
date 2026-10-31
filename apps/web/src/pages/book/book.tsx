@@ -1,10 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { Button, Container, Paper, Stack, Text, Textarea, TextInput, Title } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { meetingTypesCreate, meetingTypesList } from "../../../../../generated/sdk/client";
+import {
+  meetingTypesCreate,
+  meetingTypesList,
+  type MeetingType,
+} from "../../../../../generated/sdk/client";
+
+import { Availability } from "./availability";
 
 export function BookPage() {
   const queryClient = useQueryClient();
+  const [selectedType, setSelectedType] = useState<MeetingType | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
@@ -50,6 +57,18 @@ export function BookPage() {
     if (!Object.keys(next).length)
       create.mutate({ name: cleanName, description: cleanDescription, durationMinutes });
   }
+  if (selectedType)
+    return (
+      <Container size="lg" py="xl">
+        <Availability
+          type={selectedType}
+          onBack={() => {
+            setSelectedType(null);
+            void list.refetch();
+          }}
+        />
+      </Container>
+    );
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
@@ -71,6 +90,9 @@ export function BookPage() {
             </Title>
             <Text>{item.description}</Text>
             <Text c="dimmed">{item.durationMinutes} мин.</Text>
+            <Button mt="sm" variant="outline" onClick={() => setSelectedType(item)}>
+              Выбрать {item.name}
+            </Button>
           </Paper>
         ))}
         <Paper withBorder radius="md" p="lg">

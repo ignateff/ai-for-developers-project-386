@@ -12,6 +12,16 @@ export interface ApiError {
   fields?: ApiErrorFields;
 }
 
+export interface AvailabilityDay {
+  date: string;
+  availableCount: number;
+}
+
+export interface AvailabilityResponse {
+  version: number;
+  days: AvailabilityDay[];
+}
+
 export interface MeetingTypeInput {
   /**
      * @minLength 1
@@ -35,6 +45,17 @@ export type MeetingType = MeetingTypeInput & {
   version: number;
 };
 
+export interface Slot {
+  startsAt: string;
+  endsAt: string;
+  available: boolean;
+}
+
+export interface SlotsResponse {
+  version: number;
+  slots: Slot[];
+}
+
 export type Health200Status = typeof Health200Status[keyof typeof Health200Status];
 
 
@@ -44,6 +65,10 @@ export const Health200Status = {
 
 export type Health200 = {
   status: Health200Status;
+};
+
+export type AvailabilitySlotsParams = {
+date: string;
 };
 
 export type healthResponse200 = {
@@ -205,4 +230,132 @@ const res = await fetch(getMeetingTypesCreateUrl(),
 
   const data: meetingTypesCreateResponse['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as meetingTypesCreateResponse
+}
+
+
+
+export type availabilitySummaryResponse200 = {
+  data: AvailabilityResponse
+  status: 200
+}
+
+export type availabilitySummaryResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type availabilitySummaryResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type availabilitySummaryResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type availabilitySummaryResponseSuccess = (availabilitySummaryResponse200) & {
+  headers: Headers;
+};
+export type availabilitySummaryResponseError = (availabilitySummaryResponse404 | availabilitySummaryResponse500 | availabilitySummaryResponse503) & {
+  headers: Headers;
+};
+
+export type availabilitySummaryResponse = (availabilitySummaryResponseSuccess | availabilitySummaryResponseError)
+
+export const getAvailabilitySummaryUrl = (id: string,) => {
+
+
+
+
+  return `/api/meeting-types/${id}/availability`
+}
+
+export const availabilitySummary = async (id: string, options?: RequestInit): Promise<availabilitySummaryResponse> => {
+
+  const res = await fetch(getAvailabilitySummaryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: availabilitySummaryResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as availabilitySummaryResponse
+}
+
+
+
+export type availabilitySlotsResponse200 = {
+  data: SlotsResponse
+  status: 200
+}
+
+export type availabilitySlotsResponse400 = {
+  data: ApiError
+  status: 400
+}
+
+export type availabilitySlotsResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type availabilitySlotsResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type availabilitySlotsResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type availabilitySlotsResponseSuccess = (availabilitySlotsResponse200) & {
+  headers: Headers;
+};
+export type availabilitySlotsResponseError = (availabilitySlotsResponse400 | availabilitySlotsResponse404 | availabilitySlotsResponse500 | availabilitySlotsResponse503) & {
+  headers: Headers;
+};
+
+export type availabilitySlotsResponse = (availabilitySlotsResponseSuccess | availabilitySlotsResponseError)
+
+export const getAvailabilitySlotsUrl = (id: string,
+    params: AvailabilitySlotsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/meeting-types/${id}/slots?${stringifiedParams}` : `/api/meeting-types/${id}/slots`
+}
+
+export const availabilitySlots = async (id: string,
+    params: AvailabilitySlotsParams, options?: RequestInit): Promise<availabilitySlotsResponse> => {
+
+  const res = await fetch(getAvailabilitySlotsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: availabilitySlotsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as availabilitySlotsResponse
 }
