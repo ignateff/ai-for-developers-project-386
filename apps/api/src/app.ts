@@ -49,8 +49,8 @@ export function buildApp(
     const description = typeof input?.description === "string" ? input.description.trim() : "";
     const durationMinutes = input?.durationMinutes;
     const fields: Record<string, string> = {};
-    if (!name || name.length > 100) fields.name = "Введите название до 100 символов";
-    if (!description || description.length > 1000)
+    if (!name || [...name].length > 100) fields.name = "Введите название до 100 символов";
+    if (!description || [...description].length > 1000)
       fields.description = "Введите описание до 1000 символов";
     if (
       typeof durationMinutes !== "number" ||

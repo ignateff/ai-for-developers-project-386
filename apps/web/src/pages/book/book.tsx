@@ -43,8 +43,8 @@ export function BookPage() {
     const cleanDescription = description.trim();
     const durationMinutes = Number(duration);
     const next: Record<string, string> = {};
-    if (!cleanName || cleanName.length > 100) next.name = "Введите название до 100 символов";
-    if (!cleanDescription || cleanDescription.length > 1000)
+    if (!cleanName || [...cleanName].length > 100) next.name = "Введите название до 100 символов";
+    if (!cleanDescription || [...cleanDescription].length > 1000)
       next.description = "Введите описание до 1000 символов";
     if (
       !duration.trim() ||

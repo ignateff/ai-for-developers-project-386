@@ -82,6 +82,7 @@ test("meeting type success and validation responses conform to OpenAPI", async (
   await api.init();
   const app = buildApp();
   try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
     for (const [method, payload, status, operation] of [
       ["GET", undefined, 200, "MeetingTypes_list"],
       [
@@ -92,10 +93,15 @@ test("meeting type success and validation responses conform to OpenAPI", async (
       ],
       ["POST", { name: "", description: "Intro", durationMinutes: 30 }, 400, "MeetingTypes_create"],
     ] as const) {
-      const response = await app.inject({ method, url: "/api/meeting-types", payload });
-      expect(response.statusCode).toBe(status);
-      expect(api.validateResponse(response.json(), operation, status).errors).toBeNull();
-      if (status === 201) expect(response.headers.etag).toBeDefined();
+      const response = await fetch(`${address}/api/meeting-types`, {
+        method,
+        ...(payload
+          ? { headers: { "content-type": "application/json" }, body: JSON.stringify(payload) }
+          : {}),
+      });
+      expect(response.status).toBe(status);
+      expect(api.validateResponse(await response.json(), operation, status).errors).toBeNull();
+      if (status === 201) expect(response.headers.get("etag")).toBeDefined();
     }
   } finally {
     await app.close();
@@ -110,17 +116,18 @@ test("database failures produce safe documented errors", async () => {
   const app = buildApp({ databasePath: path });
   const db = new Database(path);
   try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
     db.exec("BEGIN EXCLUSIVE");
-    const busyList = await app.inject({ method: "GET", url: "/api/meeting-types" });
-    expect(busyList.statusCode).toBe(503);
-    expect(api.validateResponse(busyList.json(), "MeetingTypes_list", 503).errors).toBeNull();
-    const busy = await app.inject({
+    const busyList = await fetch(`${address}/api/meeting-types`);
+    expect(busyList.status).toBe(503);
+    expect(api.validateResponse(await busyList.json(), "MeetingTypes_list", 503).errors).toBeNull();
+    const busy = await fetch(`${address}/api/meeting-types`, {
       method: "POST",
-      url: "/api/meeting-types",
-      payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
     });
-    expect(busy.statusCode).toBe(503);
-    expect(api.validateResponse(busy.json(), "MeetingTypes_create", 503).errors).toBeNull();
+    expect(busy.status).toBe(503);
+    expect(api.validateResponse(await busy.json(), "MeetingTypes_create", 503).errors).toBeNull();
     for (const [url, operation] of [
       ["/api/meeting-types/id/availability", "Availability_summary"],
       [
@@ -128,9 +135,9 @@ test("database failures produce safe documented errors", async () => {
         "Availability_slots",
       ],
     ] as const) {
-      const response = await app.inject({ method: "GET", url });
-      expect(response.statusCode).toBe(503);
-      expect(api.validateResponse(response.json(), operation, 503).errors).toBeNull();
+      const response = await fetch(`${address}${url}`);
+      expect(response.status).toBe(503);
+      expect(api.validateResponse(await response.json(), operation, 503).errors).toBeNull();
     }
     db.exec("ROLLBACK");
     db.exec("DROP TABLE meeting_types");
@@ -150,17 +157,19 @@ test("database failures produce safe documented errors", async () => {
       ["GET", "MeetingTypes_list"],
       ["POST", "MeetingTypes_create"],
     ] as const) {
-      const response = await app.inject({
+      const response = await fetch(`${address}/api/meeting-types`, {
         method,
-        url: "/api/meeting-types",
-        payload:
-          method === "POST"
-            ? { name: "Call", description: "Intro", durationMinutes: 30 }
-            : undefined,
+        ...(method === "POST"
+          ? {
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
+            }
+          : {}),
       });
-      expect(response.statusCode).toBe(500);
-      expect(response.body).not.toContain("meeting_types");
-      expect(api.validateResponse(response.json(), operation, 500).errors).toBeNull();
+      expect(response.status).toBe(500);
+      const body = await response.text();
+      expect(body).not.toContain("meeting_types");
+      expect(api.validateResponse(JSON.parse(body), operation, 500).errors).toBeNull();
     }
   } finally {
     db.close();

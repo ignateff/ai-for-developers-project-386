@@ -61,3 +61,20 @@ it("rejects invalid inputs and accepts duplicate names and duration boundaries",
     await app.close();
   }
 });
+
+it("accepts Unicode code points at the length limits and rejects values above them", async () => {
+  const app = buildApp();
+  try {
+    const post = (name: string, description: string) =>
+      app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name, description, durationMinutes: 30 },
+      });
+    expect((await post("😀".repeat(100), "😀".repeat(1000))).statusCode).toBe(201);
+    expect((await post("😀".repeat(101), "ok")).statusCode).toBe(400);
+    expect((await post("ok", "😀".repeat(1001))).statusCode).toBe(400);
+  } finally {
+    await app.close();
+  }
+});
