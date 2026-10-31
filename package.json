@@ -15,6 +15,8 @@
     "db:migrate": "pnpm --filter @calendar/api db:migrate",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
+    "test:e2e:visual:update": "playwright test e2e/00-visual.spec.ts --update-snapshots",
+    "test:e2e:visual:update:linux": "bash scripts/update-visual-snapshots-linux.sh",
     "check:contract-http": "node scripts/check-contract-http.mjs"
   },
   "devDependencies": {
