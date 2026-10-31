@@ -196,7 +196,7 @@ it("keeps contacts when returning to slot selection and confirms the booking", a
   fireEvent.click(screen.getByRole("button", { name: "Продолжить" }));
   expect(screen.getByLabelText(/Имя/)).toHaveValue("Alice");
   fireEvent.click(screen.getByRole("button", { name: "Подтвердить запись" }));
-  expect(await screen.findByText("Запись подтверждена")).toBeInTheDocument();
+  expect(await screen.findByText("Бронь подтверждена")).toBeInTheDocument();
 });
 
 it("restores an unknown booking attempt, retries the same key and clears it on success", async () => {
@@ -236,7 +236,7 @@ it("restores an unknown booking attempt, retries the same key and clears it on s
   );
   expect(screen.getByText(/повтор может впервые создать запись/i)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Повторить попытку" }));
-  expect(await screen.findByText("Запись подтверждена")).toBeInTheDocument();
+  expect(await screen.findByText("Бронь подтверждена")).toBeInTheDocument();
   expect(sessionStorage.getItem("calendar-booking-attempt")).toBeNull();
 });
 

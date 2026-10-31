@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Button, Container, Paper, Stack, Text, Textarea, TextInput, Title } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   meetingTypesCreate,
@@ -58,105 +57,131 @@ export function BookPage() {
   }
   if (attempt)
     return (
-      <Container size="lg" py="xl">
-        <Recovery
-          attempt={attempt}
-          onDone={() => {
-            setAttempt(null);
-            setSelectedType(null);
-          }}
-        />
-      </Container>
+      <Recovery
+        attempt={attempt}
+        onDone={() => {
+          setAttempt(null);
+          setSelectedType(null);
+        }}
+      />
     );
   if (selectedType)
     return (
-      <Container size="lg" py="xl">
-        <Availability
-          onUnknown={setAttempt}
-          name={guestName}
-          email={guestEmail}
-          setName={setGuestName}
-          setEmail={setGuestEmail}
-          type={selectedType}
-          onBack={() => {
-            setSelectedType(null);
-            void list.refetch();
-          }}
-        />
-      </Container>
+      <Availability
+        onUnknown={setAttempt}
+        name={guestName}
+        email={guestEmail}
+        setName={setGuestName}
+        setEmail={setGuestEmail}
+        type={selectedType}
+        onBack={() => {
+          setSelectedType(null);
+          void list.refetch();
+        }}
+      />
     );
   return (
-    <Container size="lg" py="xl">
-      <Stack gap="lg">
-        <Title order={1}>Типы встреч</Title>
-        {list.isPending && <Text>Загрузка типов встреч…</Text>}
-        {list.isError && (
-          <div role="alert">
-            Не удалось загрузить типы встреч.{" "}
-            <Button variant="subtle" onClick={() => void list.refetch()}>
-              Повторить
-            </Button>
-          </div>
-        )}
-        {list.data?.length === 0 && <Text>Пока нет типов встреч</Text>}
+    <section className="container booking" aria-label="Типы встреч">
+      <header className="page-header">
+        <h1 className="page-title">Типы встреч</h1>
+        <p className="page-subtitle">Выберите подходящий формат звонка или создайте свой</p>
+      </header>
+      {list.isPending && <p className="type-empty">Загрузка типов встреч…</p>}
+      {list.isError && (
+        <div role="alert" className="alert">
+          Не удалось загрузить типы встреч.{" "}
+          <button type="button" className="btn btn-subtle" onClick={() => void list.refetch()}>
+            Повторить
+          </button>
+        </div>
+      )}
+      {list.data?.length === 0 && <p className="type-empty">Пока нет типов встреч</p>}
+      <div className="type-list">
         {list.data?.map((item) => (
-          <Paper key={item.id} withBorder radius="md" p="md">
-            <Title order={2} size="h4">
-              {item.name}
-            </Title>
-            <Text>{item.description}</Text>
-            <Text c="dimmed">{item.durationMinutes} мин.</Text>
-            <Button mt="sm" variant="outline" onClick={() => setSelectedType(item)}>
-              Выбрать {item.name}
-            </Button>
-            <ManageType
-              type={item}
-              refresh={() => {
-                void list.refetch();
-              }}
-            />
-          </Paper>
+          <article key={item.id} className="card">
+            <h2 className="type-card-name">{item.name}</h2>
+            <p className="type-card-description">{item.description}</p>
+            <p className="type-card-duration">{item.durationMinutes} мин.</p>
+            <div className="type-card-actions">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setSelectedType(item)}
+              >
+                Выбрать {item.name}
+              </button>
+              <ManageType
+                type={item}
+                refresh={() => {
+                  void list.refetch();
+                }}
+              />
+            </div>
+          </article>
         ))}
-        <Paper withBorder radius="md" p="lg">
-          <Title order={2} size="h3">
+        <section className="card" aria-labelledby="create-type-heading">
+          <h2 className="type-create-title" id="create-type-heading">
             Создать тип встречи
-          </Title>
+          </h2>
           <form onSubmit={submit} noValidate>
-            <Stack mt="md">
-              <TextInput
-                label="Название"
-                value={name}
-                onChange={(event) => setName(event.currentTarget.value)}
-                error={errors.name}
-                required
-              />
-              <Textarea
-                label="Описание"
-                value={description}
-                onChange={(event) => setDescription(event.currentTarget.value)}
-                error={errors.description}
-                required
-              />
-              <TextInput
-                label="Длительность в минутах"
-                type="number"
-                value={duration}
-                onChange={(event) => setDuration(event.currentTarget.value)}
-                error={errors.duration}
-                required
-              />
+            <div className="form-fields">
+              <div className="field">
+                <label className="field-label" htmlFor="type-name">
+                  Название
+                </label>
+                <input
+                  id="type-name"
+                  className="field-input"
+                  value={name}
+                  onChange={(event) => setName(event.currentTarget.value)}
+                  aria-invalid={errors.name ? "true" : undefined}
+                  required
+                />
+                {errors.name && <p className="field-error">{errors.name}</p>}
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="type-description">
+                  Описание
+                </label>
+                <textarea
+                  id="type-description"
+                  className="field-input"
+                  value={description}
+                  onChange={(event) => setDescription(event.currentTarget.value)}
+                  aria-invalid={errors.description ? "true" : undefined}
+                  required
+                />
+                {errors.description && <p className="field-error">{errors.description}</p>}
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="type-duration">
+                  Длительность в минутах
+                </label>
+                <input
+                  id="type-duration"
+                  className="field-input"
+                  type="number"
+                  value={duration}
+                  onChange={(event) => setDuration(event.currentTarget.value)}
+                  aria-invalid={errors.duration ? "true" : undefined}
+                  required
+                />
+                {errors.duration && <p className="field-error">{errors.duration}</p>}
+              </div>
               {create.isError && (
-                <Text role="alert" c="red">
+                <p role="alert" className="alert form-alert">
                   Не удалось создать тип встречи. Попробуйте ещё раз.
-                </Text>
+                </p>
               )}
-              <Button type="submit" loading={create.isPending}>
-                Создать тип
-              </Button>
-            </Stack>
+              <div>
+                <button type="submit" className="btn btn-accent" disabled={create.isPending}>
+                  Создать тип
+                </button>
+              </div>
+            </div>
           </form>
-        </Paper>
-      </Stack>
-    </Container>
+        </section>
+      </div>
+    </section>
   );
 }

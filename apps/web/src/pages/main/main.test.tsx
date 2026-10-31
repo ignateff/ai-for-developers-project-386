@@ -6,11 +6,7 @@ import { MantineProvider } from "@mantine/core";
 import { BrowserRouter } from "react-router-dom";
 import { MainPage } from "./main";
 
-const highlights = [
-  "Длительность слота зависит от типа встречи.",
-  "Защита от пересечения встреч.",
-  "Список предстоящих встреч для владельца.",
-];
+const steps = ["Выберите дату", "Найдите время", "Подтвердите запись"];
 
 beforeAll(() => {
   // jsdom has no matchMedia; Mantine components observe color scheme media queries.
@@ -39,7 +35,9 @@ describe("MainPage", () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Calendar");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Время для важных разговоров",
+    );
   });
 
   it("links the call to action to the booking page", () => {
@@ -51,11 +49,11 @@ describe("MainPage", () => {
       </MantineProvider>,
     );
 
-    const cta = screen.getByRole("link", { name: "Записаться →" });
+    const cta = screen.getByRole("link", { name: "Записаться на звонок" });
     expect(cta).toHaveAttribute("href", "/book");
   });
 
-  it("describes planned booking capabilities", () => {
+  it("describes how booking works in three steps", () => {
     render(
       <MantineProvider defaultColorScheme="light">
         <BrowserRouter>
@@ -64,13 +62,13 @@ describe("MainPage", () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByRole("heading", { name: "Что планируется" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Как это работает" })).toBeInTheDocument();
     const list = screen.getByRole("list");
     const items = screen.getAllByRole("listitem");
     expect(list).toBeInTheDocument();
     expect(items).toHaveLength(3);
-    for (const [index, highlight] of highlights.entries()) {
-      expect(items[index]).toHaveTextContent(highlight);
+    for (const [index, step] of steps.entries()) {
+      expect(items[index]).toHaveTextContent(step);
     }
   });
 });

@@ -1,5 +1,4 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { createBooking, type Booking, type MeetingType } from "../../../../../generated/sdk/client";
 import { isValidEmail } from "./email";
 import { saveAttempt, clearAttempt, type Attempt } from "./attempt";
@@ -90,45 +89,68 @@ export function BookingForm({
     }
   }
   return (
-    <Paper withBorder radius="md" p="lg">
-      <Title order={3} size="h4">
-        Подтверждение записи
-      </Title>
-      <Text>
-        {type.name} · {startsAt.slice(0, 10)} {startsAt.slice(11, 16)} UTC
-      </Text>
-      <Button variant="subtle" disabled={pending} onClick={onBack}>
-        Изменить время
-      </Button>
+    <section className="card form-card" aria-label="Подтверждение записи">
+      <div className="form-card-header">
+        <div>
+          <h2 className="card-title">Подтверждение записи</h2>
+          <p className="card-subtitle">Укажите данные участника встречи</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-outline form-change"
+          aria-label="Изменить время"
+          disabled={pending}
+          onClick={onBack}
+        >
+          Изменить
+        </button>
+      </div>
       <form onSubmit={(event) => void submit(event)} noValidate>
-        <Stack mt="md">
-          <TextInput
-            disabled={pending}
-            label="Имя"
-            required
-            value={name}
-            onChange={(event) => setName(event.currentTarget.value)}
-            error={errors.guestName}
-          />
-          <TextInput
-            disabled={pending}
-            label="Email"
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.currentTarget.value)}
-            error={errors.guestEmail}
-          />
+        <div className="form-fields">
+          <div className="field">
+            <label className="field-label" htmlFor="guest-name">
+              Имя
+            </label>
+            <input
+              id="guest-name"
+              className="field-input"
+              placeholder="Как к вам обращаться"
+              disabled={pending}
+              required
+              value={name}
+              onChange={(event) => setName(event.currentTarget.value)}
+              aria-invalid={errors.guestName ? "true" : undefined}
+            />
+            {errors.guestName && <p className="field-error">{errors.guestName}</p>}
+          </div>
+          <div className="field">
+            <label className="field-label" htmlFor="guest-email">
+              Email
+            </label>
+            <input
+              id="guest-email"
+              className="field-input"
+              placeholder="name@example.com"
+              type="email"
+              disabled={pending}
+              required
+              value={email}
+              onChange={(event) => setEmail(event.currentTarget.value)}
+              aria-invalid={errors.guestEmail ? "true" : undefined}
+            />
+            {errors.guestEmail && <p className="field-error">{errors.guestEmail}</p>}
+          </div>
           {error && (
-            <Text role="alert" c="red">
+            <p role="alert" className="alert form-alert">
               {error}
-            </Text>
+            </p>
           )}
-          <Button type="submit" loading={pending}>
+          <button type="submit" className="btn btn-accent form-submit" disabled={pending}>
             Подтвердить запись
-          </Button>
-        </Stack>
+          </button>
+          <p className="form-hint">Детали встречи будут отправлены на вашу почту</p>
+        </div>
       </form>
-    </Paper>
+    </section>
   );
 }

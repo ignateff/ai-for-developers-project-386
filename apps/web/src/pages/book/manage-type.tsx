@@ -1,6 +1,5 @@
 import { validateType } from "./validate-type";
 import { useState, type FormEvent } from "react";
-import { Button, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import {
   meetingTypeResourceRemove,
   meetingTypeResourceUpdate,
@@ -70,11 +69,12 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
     }
   }
   return (
-    <Stack mt="sm" align="flex-start">
+    <div className="type-manage">
       {!editing && !confirm && (
         <>
-          <Button
-            variant="subtle"
+          <button
+            type="button"
+            className="btn btn-subtle"
             onClick={() => {
               setName(type.name);
               setDescription(type.description);
@@ -83,64 +83,92 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
             }}
           >
             Изменить {type.name}
-          </Button>
-          <Button variant="subtle" color="red" onClick={() => setConfirm(true)}>
+          </button>
+          <button type="button" className="btn btn-danger" onClick={() => setConfirm(true)}>
             Удалить {type.name}
-          </Button>
+          </button>
         </>
       )}
       {editing && (
-        <form onSubmit={(event) => void save(event)} noValidate>
-          <Stack>
-            <TextInput
-              label="Название типа"
+        <form className="type-manage-form" onSubmit={(event) => void save(event)} noValidate>
+          <div className="field">
+            <label className="field-label" htmlFor={`edit-name-${type.id}`}>
+              Название типа
+            </label>
+            <input
+              id={`edit-name-${type.id}`}
+              className="field-input"
               required
-              error={fields.name}
+              aria-invalid={fields.name ? "true" : undefined}
               value={name}
               onChange={(event) => setName(event.currentTarget.value)}
             />
-            <Textarea
-              label="Описание типа"
+            {fields.name && <p className="field-error">{fields.name}</p>}
+          </div>
+          <div className="field">
+            <label className="field-label" htmlFor={`edit-description-${type.id}`}>
+              Описание типа
+            </label>
+            <textarea
+              id={`edit-description-${type.id}`}
+              className="field-input"
               required
-              error={fields.description}
+              aria-invalid={fields.description ? "true" : undefined}
               value={description}
               onChange={(event) => setDescription(event.currentTarget.value)}
             />
-            <TextInput
-              label="Длительность типа в минутах"
+            {fields.description && <p className="field-error">{fields.description}</p>}
+          </div>
+          <div className="field">
+            <label className="field-label" htmlFor={`edit-duration-${type.id}`}>
+              Длительность типа в минутах
+            </label>
+            <input
+              id={`edit-duration-${type.id}`}
+              className="field-input"
               type="number"
               required
-              error={fields.duration}
+              aria-invalid={fields.duration ? "true" : undefined}
               value={duration}
               onChange={(event) => setDuration(event.currentTarget.value)}
             />
-            <Button type="submit" loading={pending}>
+            {fields.duration && <p className="field-error">{fields.duration}</p>}
+          </div>
+          <div className="type-manage">
+            <button type="submit" className="btn btn-accent" disabled={pending}>
               Сохранить
-            </Button>
-            <Button variant="subtle" onClick={() => setEditing(false)}>
+            </button>
+            <button type="button" className="btn btn-subtle" onClick={() => setEditing(false)}>
               Отмена
-            </Button>
-          </Stack>
+            </button>
+          </div>
         </form>
       )}
       {confirm && (
-        <>
-          <Text>
+        <div>
+          <p className="recovery-text">
             Удалить тип «{type.name}»? Новые записи станут недоступны, существующие сохранятся.
-          </Text>
-          <Button color="red" loading={pending} onClick={() => void remove()}>
-            Подтвердить удаление
-          </Button>
-          <Button variant="subtle" onClick={() => setConfirm(false)}>
-            Отмена
-          </Button>
-        </>
+          </p>
+          <div className="type-manage type-manage-confirm">
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={pending}
+              onClick={() => void remove()}
+            >
+              Подтвердить удаление
+            </button>
+            <button type="button" className="btn btn-subtle" onClick={() => setConfirm(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
       {error && (
-        <Text role="alert" c="red">
+        <p role="alert" className="field-error">
           {error}
-        </Text>
+        </p>
       )}
-    </Stack>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button, Paper, Stack, Text, Title } from "@mantine/core";
 import { createBooking, type Booking } from "../../../../../generated/sdk/client";
 import { clearAttempt, type Attempt } from "./attempt";
+import { BookingSuccess } from "./success";
 
 export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => void }) {
   const [pending, setPending] = useState(false);
@@ -30,41 +30,67 @@ export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => 
   }
   if (booking)
     return (
-      <Paper p="lg">
-        <Title order={2}>Запись подтверждена</Title>
-        <Text>{booking.meetingTypeName}</Text>
-        <Text>
-          {booking.startsAt} — {booking.endsAt} UTC
-        </Text>
-        <Button onClick={onDone}>Записаться ещё</Button>
-      </Paper>
+      <section className="container booking" aria-label="Запись подтверждена">
+        <header className="page-header">
+          <h1 className="page-title">Запись на звонок</h1>
+          <p className="page-subtitle">Детали вашей встречи</p>
+        </header>
+        <div className="booking-grid booking-grid-details">
+          <BookingSuccess
+            typeName={booking.meetingTypeName}
+            startsAt={booking.startsAt}
+            endsAt={booking.endsAt}
+            againLabel="Записаться ещё"
+            onAgain={onDone}
+          />
+        </div>
+      </section>
     );
   return (
-    <Paper p="lg">
-      <Stack>
-        <Title order={2}>Незавершённая попытка записи</Title>
-        <Text>
+    <section className="container booking" aria-label="Незавершённая попытка записи">
+      <header className="page-header">
+        <h1 className="page-title">Запись на звонок</h1>
+      </header>
+      <div className="card recovery-card">
+        <h2 className="card-title">Незавершённая попытка записи</h2>
+        <p className="recovery-text">
           Результат неизвестен. Повтор может впервые создать запись, если первый запрос не дошёл.
-        </Text>
-        <Text>
+        </p>
+        <p className="recovery-attempt">
           {attempt.input.startsAt} UTC · {attempt.input.guestName} · {attempt.input.guestEmail}
-        </Text>
-        {message && <Text role="alert">{message}</Text>}
+        </p>
+        {message && (
+          <p role="alert" className="alert recovery-alert">
+            {message}
+          </p>
+        )}
         {loadable(message) ? (
-          <>
-            <Button onClick={() => void retry()} loading={pending}>
+          <div className="recovery-actions">
+            <button
+              type="button"
+              className="btn btn-accent"
+              onClick={() => void retry()}
+              disabled={pending}
+            >
               Повторить попытку
-            </Button>
-            <Button variant="outline" disabled={pending} onClick={() => setConfirmForget(true)}>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={pending}
+              onClick={() => setConfirmForget(true)}
+            >
               Забыть попытку
-            </Button>
+            </button>
             {confirmForget && (
               <>
-                <Text>
+                <p className="recovery-warning">
                   Запись может существовать и не отменяется. Новая попытка может создать вторую
                   запись.
-                </Text>
-                <Button
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-danger"
                   disabled={pending}
                   onClick={() => {
                     clearAttempt();
@@ -72,18 +98,26 @@ export function Recovery({ attempt, onDone }: { attempt: Attempt; onDone: () => 
                   }}
                 >
                   Подтвердить забывание
-                </Button>
-                <Button variant="subtle" onClick={() => setConfirmForget(false)}>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-subtle"
+                  onClick={() => setConfirmForget(false)}
+                >
                   Назад
-                </Button>
+                </button>
               </>
             )}
-          </>
+          </div>
         ) : (
-          <Button onClick={onDone}>Начать заново</Button>
+          <div className="recovery-actions">
+            <button type="button" className="btn btn-accent" onClick={onDone}>
+              Начать заново
+            </button>
+          </div>
         )}
-      </Stack>
-    </Paper>
+      </div>
+    </section>
   );
 }
 function loadable(message: string) {

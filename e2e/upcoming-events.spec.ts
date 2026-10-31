@@ -28,7 +28,7 @@ test("owner sees a newly created booking in upcoming events", async ({ page, req
   await expect(page.getByText("maria@example.com")).toBeVisible();
   await expect(page.getByText("Разбор")).toBeVisible();
   await expect(
-    page.getByText(`${date} · ${slot.startsAt.slice(11, 16)} – ${slot.endsAt.slice(11, 16)} UTC`),
+    page.getByText(`Разбор · ${slot.startsAt.slice(11, 16)} – ${slot.endsAt.slice(11, 16)} · UTC`),
   ).toBeVisible();
   await page.getByRole("button", { name: "Обновить" }).click();
   await expect(page.getByRole("heading", { name: "Мария" })).toBeVisible();

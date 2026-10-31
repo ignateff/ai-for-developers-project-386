@@ -50,7 +50,7 @@ test("retry survives failures before the request and after the saved response", 
   await expect(page.getByRole("alert")).toContainText("Результат неизвестен");
   await page.reload();
   await page.getByRole("button", { name: "Повторить попытку" }).click();
-  await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Бронь подтверждена" })).toBeVisible();
   const events = await (await request.get("/api/events/upcoming")).json();
   expect(
     events.filter(
@@ -93,7 +93,7 @@ test("forgetting a saved unknown attempt can lead to a second booking", async ({
   await page.getByLabel("Имя").fill("Recovery guest");
   await page.getByLabel("Email").fill("recovery@example.com");
   await page.getByRole("button", { name: "Подтвердить запись" }).click();
-  await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Бронь подтверждена" })).toBeVisible();
   const events = await (await request.get("/api/events/upcoming")).json();
   expect(
     events.filter(

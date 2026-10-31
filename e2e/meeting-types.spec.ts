@@ -14,8 +14,11 @@ test("owner creates a meeting type that guests can see", async ({ page }) => {
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Знакомство" })).toBeVisible();
   await page.reload();
-  await expect(page.getByText("Первый разговор")).toBeVisible();
-  await expect(page.getByText("30 мин.")).toBeVisible();
+  const card = page.locator("article", {
+    has: page.getByRole("heading", { name: "Знакомство" }),
+  });
+  await expect(card.getByText("Первый разговор")).toBeVisible();
+  await expect(card.getByText("30 мин.")).toBeVisible();
 });
 
 test("guest selects a date and available time in UTC", async ({ page }) => {
@@ -25,8 +28,19 @@ test("guest selects a date and available time in UTC", async ({ page }) => {
   await page.getByLabel("Длительность в минутах").fill("60");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
   await page.getByRole("button", { name: "Выбрать Встреча для записи" }).click();
-  const dates = page.getByRole("button", { name: /\d{4}-\d{2}-\d{2} · \d+ свободно/ });
-  await expect(dates).toHaveCount(14);
+  // The 14-day UTC window can span two months; count day buttons across both views.
+  const dayButton = page.getByRole("button", { name: /\d{4}-\d{2}-\d{2} · \d+ свободно/ });
+  await expect(dayButton.first()).toBeVisible();
+  let total = await dayButton.count();
+  const monthTitle = page.locator(".calendar-month-title");
+  const firstMonth = await monthTitle.innerText();
+  const nextMonth = page.getByRole("button", { name: "Следующий месяц" });
+  if (await nextMonth.isEnabled()) {
+    await nextMonth.click();
+    await expect(monthTitle).not.toHaveText(firstMonth);
+    total += await dayButton.count();
+  }
+  expect(total).toBe(14);
   await page
     .getByRole("button", { name: /\d{4}-\d{2}-\d{2} · [1-9]\d* свободно/ })
     .first()
@@ -50,7 +64,7 @@ test("guest resolves a conflict without losing contacts and confirms a booking",
   const dateButton = page
     .getByRole("button", { name: /\d{4}-\d{2}-\d{2} · (?:[2-9]|[1-9]\d+) свободно/ })
     .first();
-  const date = (await dateButton.innerText()).slice(0, 10);
+  const date = (await dateButton.getAttribute("aria-label"))!.slice(0, 10);
   await dateButton.click();
   const firstSlot = page.getByRole("button", { name: /^\d\d:\d\d UTC$/ }).first();
   const time = (await firstSlot.innerText()).slice(0, 5);
@@ -79,8 +93,8 @@ test("guest resolves a conflict without losing contacts and confirms a booking",
   await expect(page.getByLabel("Имя")).toHaveValue("Алиса");
   await expect(page.getByLabel("Email")).toHaveValue("alice@example.com");
   await page.getByRole("button", { name: "Подтвердить запись" }).click();
-  await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
-  await expect(page.getByText(/UTC/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Бронь подтверждена" })).toBeVisible();
+  await expect(page.getByText(/· \d\d:\d\d – \d\d:\d\d · UTC/)).toBeVisible();
 });
 
 test("owner edits and confirms deletion of a meeting type", async ({ page }) => {

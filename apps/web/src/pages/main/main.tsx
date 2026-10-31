@@ -1,40 +1,56 @@
 import { Link } from "react-router-dom";
-import { Badge, Button, Container, List, Paper, Text, Title } from "@mantine/core";
+import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
 import "./main.css";
 
-const highlights = [
-  "Длительность слота зависит от типа встречи.",
-  "Защита от пересечения встреч.",
-  "Список предстоящих встреч для владельца.",
+const steps = [
+  {
+    icon: CalendarDays,
+    title: "Выберите дату",
+    description: "Доступные дни в календаре",
+  },
+  {
+    icon: Clock3,
+    title: "Найдите время",
+    description: "Свободные слоты для встречи",
+  },
+  {
+    icon: CircleCheck,
+    title: "Подтвердите запись",
+    description: "Оставьте имя и электронную почту",
+  },
 ];
 
 export function MainPage() {
   return (
-    <Container size="lg" className="hero">
+    <div className="container hero">
       <div className="hero-copy">
-        <Badge variant="light" color="brand" size="lg" className="hero-badge">
-          Сервис в разработке
-        </Badge>
-        <Title order={1} className="hero-title">
-          Calendar
-        </Title>
-        <Text size="lg" c="dimmed" className="hero-subtitle">
-          Здесь можно будет выбрать тип встречи и записаться на звонок в свободное время.
-        </Text>
-        <Button component={Link} to="/book" size="md" className="hero-cta" mt="xl">
-          Записаться →
-        </Button>
+        <p className="hero-label">Встречи без лишних шагов</p>
+        <h1 className="hero-title">Время для важных разговоров</h1>
+        <p className="hero-subtitle">
+          Выберите удобный день и свободное время, чтобы записаться на звонок.
+        </p>
+        <Link to="/book" className="btn btn-accent hero-cta">
+          Записаться на звонок
+        </Link>
       </div>
-      <Paper withBorder radius="lg" p="xl" className="hero-panel">
-        <Title order={3} size="h4">
-          Что планируется
-        </Title>
-        <List mt="md" spacing="sm" size="sm" c="dimmed">
-          {highlights.map((item) => (
-            <List.Item key={item}>{item}</List.Item>
+      <section className="card hero-how" aria-labelledby="how-it-works">
+        <h2 className="hero-how-title" id="how-it-works">
+          Как это работает
+        </h2>
+        <ol className="hero-steps">
+          {steps.map((step) => (
+            <li key={step.title} className="hero-step">
+              <span className="hero-step-icon" aria-hidden>
+                <step.icon size={20} strokeWidth={2} />
+              </span>
+              <span>
+                <span className="hero-step-title">{step.title}</span>
+                <span className="hero-step-description">{step.description}</span>
+              </span>
+            </li>
           ))}
-        </List>
-      </Paper>
-    </Container>
+        </ol>
+      </section>
+    </div>
   );
 }

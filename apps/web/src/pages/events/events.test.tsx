@@ -64,9 +64,9 @@ it("shows loading, empty state and refreshes the list", async () => {
   expect(await screen.findByText("Предстоящих событий пока нет")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Обновить" }));
   expect(await screen.findByText("Alice")).toBeInTheDocument();
-  expect(screen.getByText("Call")).toBeInTheDocument();
+  expect(screen.getByText(/Call ·/)).toBeInTheDocument();
   expect(screen.getByText("alice@example.com")).toBeInTheDocument();
-  expect(screen.getByText(/2026-11-02.*09:00.*10:00.*UTC/)).toBeInTheDocument();
+  expect(screen.getByText(/Call · 09:00 – 10:00 · UTC/)).toBeInTheDocument();
 });
 it("shows a retryable error", async () => {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
