@@ -9,9 +9,11 @@ import {
 } from "../../../../../generated/sdk/client";
 import "./availability.css";
 import { BookingForm } from "./booking-form";
+import type { Attempt } from "./attempt";
 
 export function Availability({
   type,
+  onUnknown,
   onBack,
   name,
   email,
@@ -19,6 +21,7 @@ export function Availability({
   setEmail,
 }: {
   type: MeetingType;
+  onUnknown: (attempt: Attempt) => void;
   onBack: () => void;
   name: string;
   email: string;
@@ -89,6 +92,7 @@ export function Availability({
       {formOpen && selected ? (
         <BookingForm
           type={type}
+          onUnknown={onUnknown}
           startsAt={selected}
           name={name}
           email={email}

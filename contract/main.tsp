@@ -74,3 +74,18 @@ op createBooking(@header("Idempotency-Key") key: string, @body input: BookingInp
   { @statusCode statusCode: 409; @body body: ApiError } |
   { @statusCode statusCode: 500; @body body: ApiError } |
   { @statusCode statusCode: 503; @body body: ApiError };
+
+model UpcomingEvent {
+  id: string;
+  meetingTypeName: string;
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+  guestName: string;
+  guestEmail: string;
+}
+@route("/api/events/upcoming")
+@get
+op upcomingEvents():
+  { @statusCode statusCode: 200; @header("Cache-Control") cacheControl: string; @body body: UpcomingEvent[] } |
+  { @statusCode statusCode: 500; @body body: ApiError } |
+  { @statusCode statusCode: 503; @body body: ApiError };

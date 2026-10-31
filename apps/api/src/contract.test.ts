@@ -40,6 +40,7 @@ test("detects real undocumented routes and a documented route without implementa
         "/api/meeting-types": { get: {}, post: {} },
         "/api/meeting-types/{id}": { get: {}, put: {}, delete: {} },
         "/api/bookings": { post: {} },
+        "/api/events/upcoming": { get: {} },
         "/api/meeting-types/{id}/availability": { get: {} },
         "/api/meeting-types/{id}/slots": { get: {} },
         "/api/bookings/{id}": { get: {} },
@@ -291,6 +292,58 @@ test("booking responses and required no-store header match OpenAPI", async () =>
     const failure = await send(payload, "error");
     await validate(failure, 500);
     expect(failure.body).not.toContain("bookings");
+  } finally {
+    db.close();
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("upcoming events responses conform to OpenAPI and avoid caching contacts", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "events-contract-"));
+  const path = join(directory, "db.sqlite");
+  const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:00:00Z") });
+  const db = new Database(path);
+  const api = new OpenAPIBackend({ definition, strict: true });
+  await api.init();
+  try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const type = await (
+      await fetch(`${address}/api/meeting-types`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
+      })
+    ).json();
+    const booked = await fetch(`${address}/api/bookings`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "idempotency-key": "test-key" },
+      body: JSON.stringify({
+        meetingTypeId: type.id,
+        meetingTypeVersion: 1,
+        startsAt: "2026-10-30T09:00:00Z",
+        guestName: "Guest",
+        guestEmail: "guest@example.com",
+      }),
+    });
+    expect(booked.status).toBe(201);
+    async function validate(status: number) {
+      const response = await fetch(`${address}/api/events/upcoming`);
+      expect(response.status).toBe(status);
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      const body = await response.json();
+      expect(api.validateResponse(body, "upcomingEvents", status).errors).toBeNull();
+      return body;
+    }
+    expect(await validate(200)).toMatchObject([
+      { guestName: "Guest", guestEmail: "guest@example.com" },
+    ]);
+    db.exec("BEGIN EXCLUSIVE");
+    await validate(503);
+    db.exec("ROLLBACK");
+    db.exec("DROP TABLE bookings");
+    const failure = await validate(500);
+    expect(JSON.stringify(failure)).not.toContain("bookings");
   } finally {
     db.close();
     await app.close();

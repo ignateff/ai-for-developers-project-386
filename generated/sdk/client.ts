@@ -85,6 +85,15 @@ export interface SlotsResponse {
   slots: Slot[];
 }
 
+export interface UpcomingEvent {
+  id: string;
+  meetingTypeName: string;
+  startsAt: string;
+  endsAt: string;
+  guestName: string;
+  guestEmail: string;
+}
+
 export type Health200Status = typeof Health200Status[keyof typeof Health200Status];
 
 
@@ -172,6 +181,58 @@ const res = await fetch(getCreateBookingUrl(),
 
   const data: createBookingResponse['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as createBookingResponse
+}
+
+
+
+export type upcomingEventsResponse200 = {
+  data: UpcomingEvent[]
+  status: 200
+}
+
+export type upcomingEventsResponse500 = {
+  data: ApiError
+  status: 500
+}
+
+export type upcomingEventsResponse503 = {
+  data: ApiError
+  status: 503
+}
+
+export type upcomingEventsResponseSuccess = (upcomingEventsResponse200) & {
+  headers: Headers;
+};
+export type upcomingEventsResponseError = (upcomingEventsResponse500 | upcomingEventsResponse503) & {
+  headers: Headers;
+};
+
+export type upcomingEventsResponse = (upcomingEventsResponseSuccess | upcomingEventsResponseError)
+
+export const getUpcomingEventsUrl = () => {
+
+
+
+
+  return `/api/events/upcoming`
+}
+
+export const upcomingEvents = async ( options?: RequestInit): Promise<upcomingEventsResponse> => {
+
+  const res = await fetch(getUpcomingEventsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: upcomingEventsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as upcomingEventsResponse
 }
 
 

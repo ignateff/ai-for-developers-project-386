@@ -1,6 +1,6 @@
 import Fastify, { type onRouteHookHandler } from "fastify";
 import { createHash, randomUUID } from "node:crypto";
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, asc, eq, gt, lt } from "drizzle-orm";
 import { openDatabase } from "./database.js";
 import { bookings, meetingTypes } from "./schema.js";
 import { calculateSlots, DAY, parseDate, windowStart } from "./availability.js";
@@ -236,6 +236,28 @@ export function buildApp(
       };
     },
   );
+  app.get("/api/events/upcoming", async (_request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    const now = (options.now ?? Date.now)();
+    return storage.db
+      .select({
+        id: bookings.id,
+        meetingTypeName: bookings.meetingTypeName,
+        startsAt: bookings.startsAt,
+        endsAt: bookings.endsAt,
+        guestName: bookings.guestName,
+        guestEmail: bookings.guestEmail,
+      })
+      .from(bookings)
+      .where(gt(bookings.startsAt, now))
+      .orderBy(asc(bookings.startsAt), asc(bookings.id))
+      .all()
+      .map((event) => ({
+        ...event,
+        startsAt: new Date(event.startsAt).toISOString(),
+        endsAt: new Date(event.endsAt).toISOString(),
+      }));
+  });
   app.post("/api/bookings", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     const input = request.body as Record<string, unknown> | null;

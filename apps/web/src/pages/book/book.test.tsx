@@ -199,6 +199,89 @@ it("keeps contacts when returning to slot selection and confirms the booking", a
   expect(await screen.findByText("Запись подтверждена")).toBeInTheDocument();
 });
 
+it("restores an unknown booking attempt, retries the same key and clears it on success", async () => {
+  const attempt = {
+    key: "secret-key",
+    input: {
+      meetingTypeId: "one",
+      meetingTypeVersion: 1,
+      startsAt: "2026-11-02T09:00:00.000Z",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+    },
+  };
+  sessionStorage.setItem("calendar-booking-attempt", JSON.stringify(attempt));
+  const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    if (String(url).endsWith("/bookings")) {
+      expect(new Headers(init?.headers).get("idempotency-key")).toBe(attempt.key);
+      expect(JSON.parse(String(init?.body))).toEqual(attempt.input);
+      return new Response(
+        JSON.stringify({
+          meetingTypeName: "Call",
+          startsAt: attempt.input.startsAt,
+          endsAt: "2026-11-02T10:00:00.000Z",
+        }),
+        { status: 201 },
+      );
+    }
+    return new Response("[]", { status: 200 });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText(/повтор может впервые создать запись/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Повторить попытку" }));
+  expect(await screen.findByText("Запись подтверждена")).toBeInTheDocument();
+  expect(sessionStorage.getItem("calendar-booking-attempt")).toBeNull();
+});
+
+it("keeps an unknown attempt after 503 and requires confirmation before forgetting it", async () => {
+  const attempt = {
+    key: "secret-key",
+    input: {
+      meetingTypeId: "one",
+      meetingTypeVersion: 1,
+      startsAt: "2026-11-02T09:00:00.000Z",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+    },
+  };
+  sessionStorage.setItem("calendar-booking-attempt", JSON.stringify(attempt));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: RequestInfo | URL) =>
+      String(url).endsWith("/bookings")
+        ? new Response(JSON.stringify({ code: "DATABASE_BUSY", message: "busy" }), { status: 503 })
+        : new Response("[]", { status: 200 }),
+    ),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Повторить попытку" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Результат неизвестен");
+  expect(sessionStorage.getItem("calendar-booking-attempt")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Забыть попытку" }));
+  expect(screen.getByText(/Запись может существовать и не отменяется/)).toHaveTextContent(
+    "Новая попытка может создать вторую запись",
+  );
+  expect(sessionStorage.getItem("calendar-booking-attempt")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Подтвердить забывание" }));
+  expect(sessionStorage.getItem("calendar-booking-attempt")).toBeNull();
+  expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
+});
+
 it("allows editing and confirming deletion of a meeting type", async () => {
   const type = { id: "one", name: "Call", description: "Intro", durationMinutes: 30, version: 1 };
   const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {

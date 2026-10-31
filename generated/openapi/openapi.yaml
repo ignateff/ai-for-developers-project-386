@@ -55,6 +55,36 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingInput'
+  /api/events/upcoming:
+    get:
+      operationId: upcomingEvents
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UpcomingEvent'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/health:
     get:
       operationId: health
@@ -533,3 +563,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Slot'
+    UpcomingEvent:
+      type: object
+      required:
+        - id
+        - meetingTypeName
+        - startsAt
+        - endsAt
+        - guestName
+        - guestEmail
+      properties:
+        id:
+          type: string
+        meetingTypeName:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+        guestEmail:
+          type: string

@@ -9,9 +9,12 @@ import {
 
 import { Availability } from "./availability";
 import { ManageType } from "./manage-type";
+import { loadAttempt, type Attempt } from "./attempt";
+import { Recovery } from "./recovery";
 
 export function BookPage() {
   const queryClient = useQueryClient();
+  const [attempt, setAttempt] = useState<Attempt | null>(loadAttempt);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [selectedType, setSelectedType] = useState<MeetingType | null>(null);
@@ -60,10 +63,23 @@ export function BookPage() {
     if (!Object.keys(next).length)
       create.mutate({ name: cleanName, description: cleanDescription, durationMinutes });
   }
+  if (attempt)
+    return (
+      <Container size="lg" py="xl">
+        <Recovery
+          attempt={attempt}
+          onDone={() => {
+            setAttempt(null);
+            setSelectedType(null);
+          }}
+        />
+      </Container>
+    );
   if (selectedType)
     return (
       <Container size="lg" py="xl">
         <Availability
+          onUnknown={setAttempt}
           name={guestName}
           email={guestEmail}
           setName={setGuestName}

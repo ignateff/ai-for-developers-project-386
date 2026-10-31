@@ -242,3 +242,52 @@ it("replays the original snapshot even after the type is deleted and the slot ha
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it("safely retries when the request or its successful response is lost", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { default: Database } = await import("better-sqlite3");
+  const dir = mkdtempSync(join(tmpdir(), "calendar-lost-"));
+  const path = join(dir, "db.sqlite");
+  const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:00:00Z") });
+  const db = new Database(path);
+  try {
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const typeResponse = await fetch(`${address}/api/meeting-types`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
+    });
+    const type = await typeResponse.json();
+    const payload = {
+      meetingTypeId: type.id,
+      meetingTypeVersion: 1,
+      startsAt: "2026-10-30T09:00:00.000Z",
+      guestName: "Alice",
+      guestEmail: "a@example.com",
+    };
+    const send = (input = payload) =>
+      fetch(`${address}/api/bookings`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "Idempotency-Key": "lost-response-key" },
+        body: JSON.stringify(input),
+      });
+    // A request that never reaches the server leaves no row; retry creates it.
+    expect(db.prepare("select count(*) as count from bookings").get()).toEqual({ count: 0 });
+    const first = await send();
+    expect(first.status).toBe(201);
+    const expected = await first.json(); // Simulates the persisted result whose response is lost.
+    const retry = await send();
+    expect(retry.status).toBe(201);
+    expect(await retry.json()).toEqual(expected);
+    const mismatch = await send({ ...payload, guestName: "Bob" });
+    expect(mismatch.status).toBe(409);
+    expect((await mismatch.json()).code).toBe("IDEMPOTENCY_KEY_REUSED");
+    expect(db.prepare("select count(*) as count from bookings").get()).toEqual({ count: 1 });
+  } finally {
+    db.close();
+    await app.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
