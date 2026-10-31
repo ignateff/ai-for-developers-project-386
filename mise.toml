@@ -75,6 +75,14 @@ run = "pnpm run test:e2e"
 [tasks."test:e2e:install"]
 run = "pnpm run test:e2e:install"
 
+[tasks."test:e2e:visual:update"]
+description = "Update visual regression baselines for the current platform"
+run = "pnpm run test:e2e:visual:update"
+
+[tasks."test:e2e:visual:update:linux"]
+description = "Update Linux (CI) visual regression baselines in the Playwright container"
+run = "pnpm run test:e2e:visual:update:linux"
+
 [tasks.build]
 run = "pnpm run build"
 
