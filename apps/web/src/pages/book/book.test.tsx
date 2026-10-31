@@ -93,6 +93,41 @@ it("shows a retryable error when the list cannot be loaded", async () => {
   expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
 });
 
+it("hides stale meeting types if refreshing the list after returning fails", async () => {
+  let listRequests = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith("/availability")) {
+        return new Response(JSON.stringify({ version: 1, days: [] }), { status: 200 });
+      }
+      listRequests++;
+      if (listRequests === 2) throw new Error("offline");
+      return new Response(
+        JSON.stringify([
+          { id: "one", name: "Call", description: "Intro", durationMinutes: 60, version: 1 },
+        ]),
+        { status: 200 },
+      );
+    }),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Выбрать Call" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Назад" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось загрузить типы встреч");
+  expect(screen.queryByRole("button", { name: "Выбрать Call" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Повторить" }));
+  expect(await screen.findByRole("button", { name: "Выбрать Call" })).toBeInTheDocument();
+});
+
 it("lets a guest select an available slot but not an occupied one", async () => {
   vi.stubGlobal(
     "fetch",
@@ -339,19 +374,22 @@ it("allows editing and confirming deletion of a meeting type", async () => {
       </MantineProvider>
     </QueryClientProvider>,
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Изменить Call" }));
+  const edit = await screen.findByRole("button", { name: "Изменить" });
+  expect(edit).toHaveAccessibleDescription("Call");
+  expect(screen.getByRole("button", { name: "Удалить" })).toHaveAccessibleDescription("Call");
+  fireEvent.click(edit);
   fireEvent.change(await screen.findByLabelText(/Название типа/), { target: { value: " " } });
   fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
   expect(screen.getByLabelText(/Название типа/)).toHaveAttribute("aria-invalid", "true");
   fireEvent.change(screen.getByLabelText(/Название типа/), { target: { value: "Updated" } });
   fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
-  await screen.findByRole("button", { name: "Изменить Call" });
+  await screen.findByRole("button", { name: "Изменить" });
   expect(
     fetchMock.mock.calls.some(
       ([, init]) => init?.method === "PUT" && new Headers(init.headers).get("if-match") === '"1"',
     ),
   ).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "Удалить Call" }));
+  fireEvent.click(screen.getByRole("button", { name: "Удалить" }));
   expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: "Подтвердить удаление" }));
   await vi.waitFor(() =>

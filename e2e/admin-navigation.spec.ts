@@ -62,7 +62,11 @@ test("admin retains form input on failed create and edit and retries list loadin
     if (route.request().method() === "PUT") await route.fulfill({ status: 500, body: "{}" });
     else await route.continue();
   });
-  await page.getByRole("button", { name: "Изменить Ошибка редактирования" }).click();
+  await page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: "Ошибка редактирования", exact: true }) })
+    .getByRole("button", { name: "Изменить", exact: true })
+    .click();
   await page.getByLabel("Название типа").fill("Новое название");
   await page.getByRole("button", { name: "Сохранить" }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("Не удалось сохранить");

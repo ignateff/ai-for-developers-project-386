@@ -83,7 +83,9 @@ export function AdminTypesPage() {
       <div className="type-list">
         {list.data?.map((item) => (
           <article key={item.id} className="card">
-            <h2 className="type-card-name">{item.name}</h2>
+            <h2 id={`meeting-type-${item.id}`} className="type-card-name">
+              {item.name}
+            </h2>
             <p className="type-card-description">{item.description}</p>
             <p className="type-card-duration">{item.durationMinutes} мин.</p>
             <div className="type-card-actions">

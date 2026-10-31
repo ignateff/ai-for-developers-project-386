@@ -70,24 +70,27 @@ export function BookPage() {
           </button>
         </div>
       )}
-      {list.data?.length === 0 && <p className="type-empty">Пока нет типов встреч</p>}
+      {!list.isError && list.data?.length === 0 && (
+        <p className="type-empty">Пока нет типов встреч</p>
+      )}
       <div className="type-list guest-types">
-        {list.data?.map((item) => (
-          <article key={item.id} className="card guest-type-card">
-            <h2 className="type-card-name">{item.name}</h2>
-            <p className="type-card-description">{item.description}</p>
-            <p className="type-card-duration">
-              <Clock3 size={17} /> {item.durationMinutes} мин.{" "}
-              <ArrowRight className="guest-arrow" size={20} />
-            </p>
-            <button
-              type="button"
-              className="guest-card-button"
-              aria-label={`Выбрать ${item.name}`}
-              onClick={() => setSelectedType(item)}
-            />
-          </article>
-        ))}
+        {!list.isError &&
+          list.data?.map((item) => (
+            <article key={item.id} className="card guest-type-card">
+              <h2 className="type-card-name">{item.name}</h2>
+              <p className="type-card-description">{item.description}</p>
+              <p className="type-card-duration">
+                <Clock3 size={17} /> {item.durationMinutes} мин.{" "}
+                <ArrowRight className="guest-arrow" size={20} />
+              </p>
+              <button
+                type="button"
+                className="guest-card-button"
+                aria-label={`Выбрать ${item.name}`}
+                onClick={() => setSelectedType(item)}
+              />
+            </article>
+          ))}
       </div>
     </section>
   );

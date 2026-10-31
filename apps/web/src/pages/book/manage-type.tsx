@@ -76,6 +76,7 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
           <button
             type="button"
             className="btn btn-subtle"
+            aria-describedby={`meeting-type-${type.id}`}
             onClick={() => {
               setError("");
               setFields({});
@@ -85,10 +86,15 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
               setEditing(true);
             }}
           >
-            Изменить {type.name}
+            Изменить
           </button>
-          <button type="button" className="btn btn-danger" onClick={() => setConfirm(true)}>
-            Удалить {type.name}
+          <button
+            type="button"
+            className="btn btn-danger"
+            aria-describedby={`meeting-type-${type.id}`}
+            onClick={() => setConfirm(true)}
+          >
+            Удалить
           </button>
         </>
       )}
