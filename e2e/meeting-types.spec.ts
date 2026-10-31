@@ -107,13 +107,17 @@ test("owner edits and confirms deletion of a meeting type", async ({ page }) => 
   await page.getByLabel("Описание").fill("Исходное описание");
   await page.getByLabel("Длительность в минутах").fill("30");
   await page.getByRole("button", { name: "Создать тип", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Создать тип встречи" })).toHaveCount(0);
   const original = page
     .locator("article")
     .filter({ has: page.getByRole("heading", { name: "Управление типом", exact: true }) });
   const edit = original.getByRole("button", { name: "Изменить", exact: true });
   await edit.focus();
   await page.keyboard.press("Enter");
-  await page.getByRole("button", { name: "Отмена", exact: true }).click();
+  const editDialog = page.getByRole("dialog", { name: "Изменить Управление типом" });
+  await expect(editDialog).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await editDialog.getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(edit).toBeFocused();
   await page.keyboard.press("Enter");
   await page.getByLabel("Название типа").fill("Обновлённый тип");
