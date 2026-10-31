@@ -11,6 +11,12 @@
 - Regenerate OpenAPI and SDK with `mise run generate`; never edit `generated/` by hand.
 - Keep mise tasks in sync with root `package.json` scripts: every actionable script must be runnable as `mise run <task>`. If an action has no mise task, add one rather than running the underlying command manually (`mise exec -- pnpm <script>` is a signal a task is missing).
 
+## Design references
+
+- Before working on UI, read `docs/design/README.md` and view the corresponding screenshots in `docs/design/screenshots/`.
+- Screenshots are visual orientations, not functional requirements; functional rules live in linked GitHub Issues. If a screenshot disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
+- The README includes a mapping of screenshots to screens/issues; use it to find the right reference for the task at hand.
+
 ## Worktrees
 
 - For an isolated checkout, use the `using-git-worktrees` skill when available. Follow the install and check commands above; installing shared Git hooks is not required for each worktree.
