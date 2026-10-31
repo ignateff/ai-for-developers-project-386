@@ -13,9 +13,10 @@
 
 ## Design references
 
-- Before working on UI, read `docs/design/README.md` and view the corresponding screenshots in `docs/design/screenshots/`.
-- Screenshots are visual orientations, not functional requirements; functional rules live in linked GitHub Issues. If a screenshot disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
-- The README includes a mapping of screenshots to screens/issues; use it to find the right reference for the task at hand.
+- Before working on UI, read **`docs/design/README.md`** first.
+- **Primary design source:** `docs/design/calendar-booking.pen` (Penpot JSON). Read the relevant frame from this file for exact specs: colors, typography, sizes, layout, spacing, and component states. The README provides the design-system summary and a mapping of frames to screens/issues.
+- **Screenshots in `docs/design/screenshots/` are outdated** — they exist only for historical context and should NOT be used for implementation reference.
+- Functional requirements live in linked GitHub Issues. If the design file disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
 
 ## Worktrees
 
