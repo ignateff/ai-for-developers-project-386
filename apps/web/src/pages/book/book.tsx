@@ -7,6 +7,7 @@ import {
   type MeetingType,
 } from "../../../../../generated/sdk/client";
 
+import { validateType } from "./validate-type";
 import { Availability } from "./availability";
 import { ManageType } from "./manage-type";
 import { loadAttempt, type Attempt } from "./attempt";
@@ -45,20 +46,12 @@ export function BookPage() {
   });
   function submit(event: FormEvent) {
     event.preventDefault();
-    const cleanName = name.trim();
-    const cleanDescription = description.trim();
-    const durationMinutes = Number(duration);
-    const next: Record<string, string> = {};
-    if (!cleanName || [...cleanName].length > 100) next.name = "Введите название до 100 символов";
-    if (!cleanDescription || [...cleanDescription].length > 1000)
-      next.description = "Введите описание до 1000 символов";
-    if (
-      !duration.trim() ||
-      !Number.isInteger(durationMinutes) ||
-      durationMinutes < 1 ||
-      durationMinutes > 2147483647
-    )
-      next.duration = "Введите целое число от 1 до 2147483647";
+    const {
+      cleanName,
+      cleanDescription,
+      minutes: durationMinutes,
+      fields: next,
+    } = validateType(name, description, duration);
     setErrors(next);
     if (!Object.keys(next).length)
       create.mutate({ name: cleanName, description: cleanDescription, durationMinutes });

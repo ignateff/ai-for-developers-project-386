@@ -29,6 +29,7 @@ export function Availability({
   setEmail: (value: string) => void;
 }) {
   const [formOpen, setFormOpen] = useState(false);
+  const [bookingPending, setBookingPending] = useState(false);
   const [confirmation, setConfirmation] = useState<Booking | null>(null);
   const [conflict, setConflict] = useState("");
   const [date, setDate] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export function Availability({
     );
   return (
     <section aria-label="Выбор даты и времени">
-      <Button variant="subtle" onClick={onBack}>
+      <Button variant="subtle" disabled={bookingPending} onClick={onBack}>
         ← Выбрать другой тип
       </Button>
       <Title order={2}>Запись на звонок</Title>
@@ -93,6 +94,7 @@ export function Availability({
         <BookingForm
           type={type}
           onUnknown={onUnknown}
+          onPendingChange={setBookingPending}
           startsAt={selected}
           name={name}
           email={email}

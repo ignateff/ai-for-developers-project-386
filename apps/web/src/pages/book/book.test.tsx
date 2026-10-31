@@ -325,3 +325,47 @@ it("allows editing and confirming deletion of a meeting type", async () => {
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true),
   );
 });
+
+it("disables changing the meeting type while the booking request is in flight", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/bookings")) return new Promise<Response>(() => {});
+      const data = url.endsWith("/availability")
+        ? { version: 1, days: [{ date: "2026-11-02", availableCount: 1 }] }
+        : url.includes("/slots?")
+          ? {
+              version: 1,
+              slots: [
+                {
+                  startsAt: "2026-11-02T09:00:00.000Z",
+                  endsAt: "2026-11-02T10:00:00.000Z",
+                  available: true,
+                },
+              ],
+            }
+          : [{ id: "one", name: "Call", description: "Intro", durationMinutes: 60, version: 1 }];
+      return new Response(JSON.stringify(data), { status: 200 });
+    }),
+  );
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MantineProvider>
+        <BookPage />
+      </MantineProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Выбрать Call" }));
+  fireEvent.click(await screen.findByRole("button", { name: /2026-11-02/ }));
+  fireEvent.click(await screen.findByRole("button", { name: "09:00 UTC" }));
+  fireEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+  fireEvent.change(screen.getByLabelText(/Имя/), { target: { value: "Alice" } });
+  fireEvent.change(screen.getByLabelText(/Email/), { target: { value: "a@example.com" } });
+  fireEvent.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+  expect(screen.getByRole("button", { name: /Выбрать другой тип/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Изменить время" })).toBeDisabled();
+  sessionStorage.clear();
+});

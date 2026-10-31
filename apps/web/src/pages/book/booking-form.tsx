@@ -1,11 +1,13 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { createBooking, type Booking, type MeetingType } from "../../../../../generated/sdk/client";
+import { isValidEmail } from "./email";
 import { saveAttempt, clearAttempt, type Attempt } from "./attempt";
 
 export function BookingForm({
   type,
   onUnknown,
+  onPendingChange,
   startsAt,
   name,
   email,
@@ -18,6 +20,7 @@ export function BookingForm({
 }: {
   type: MeetingType;
   onUnknown: (attempt: Attempt) => void;
+  onPendingChange?: (pending: boolean) => void;
   startsAt: string;
   name: string;
   email: string;
@@ -30,6 +33,7 @@ export function BookingForm({
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
   const [error, setError] = useState("");
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -37,14 +41,10 @@ export function BookingForm({
       guestEmail = email.trim();
     const next: Record<string, string> = {};
     if (!guestName || [...guestName].length > 100) next.guestName = "Введите имя до 100 символов";
-    if (
-      !guestEmail ||
-      [...guestEmail].length > 254 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(guestEmail)
-    )
+    if (!guestEmail || [...guestEmail].length > 254 || !isValidEmail(guestEmail))
       next.guestEmail = "Введите корректный email до 254 символов";
     setErrors(next);
-    if (Object.keys(next).length || pending) return;
+    if (Object.keys(next).length || pendingRef.current) return;
     const input = {
       meetingTypeId: type.id,
       meetingTypeVersion: type.version,
@@ -59,7 +59,9 @@ export function BookingForm({
       setError("Не удалось сохранить попытку в этой вкладке.");
       return;
     }
+    pendingRef.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setError("");
     try {
       const response = await createBooking(input, {
@@ -82,7 +84,9 @@ export function BookingForm({
     } catch {
       onUnknown(attempt);
     } finally {
+      pendingRef.current = false;
       setPending(false);
+      onPendingChange?.(false);
     }
   }
   return (
@@ -93,12 +97,13 @@ export function BookingForm({
       <Text>
         {type.name} · {startsAt.slice(0, 10)} {startsAt.slice(11, 16)} UTC
       </Text>
-      <Button variant="subtle" onClick={onBack}>
+      <Button variant="subtle" disabled={pending} onClick={onBack}>
         Изменить время
       </Button>
       <form onSubmit={(event) => void submit(event)} noValidate>
         <Stack mt="md">
           <TextInput
+            disabled={pending}
             label="Имя"
             required
             value={name}
@@ -106,6 +111,7 @@ export function BookingForm({
             error={errors.guestName}
           />
           <TextInput
+            disabled={pending}
             label="Email"
             type="email"
             required

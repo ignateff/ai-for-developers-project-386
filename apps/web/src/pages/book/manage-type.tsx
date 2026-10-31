@@ -1,3 +1,4 @@
+import { validateType } from "./validate-type";
 import { useState, type FormEvent } from "react";
 import { Button, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import {
@@ -17,15 +18,12 @@ export function ManageType({ type, refresh }: { type: MeetingType; refresh: () =
   const [pending, setPending] = useState(false);
   async function save(event: FormEvent) {
     event.preventDefault();
-    const cleanName = name.trim(),
-      cleanDescription = description.trim(),
-      minutes = Number(duration);
-    const next: Record<string, string> = {};
-    if (!cleanName || [...cleanName].length > 100) next.name = "Введите название до 100 символов";
-    if (!cleanDescription || [...cleanDescription].length > 1000)
-      next.description = "Введите описание до 1000 символов";
-    if (!duration.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 2147483647)
-      next.duration = "Введите целое число от 1 до 2147483647";
+    const {
+      cleanName,
+      cleanDescription,
+      minutes,
+      fields: next,
+    } = validateType(name, description, duration);
     setFields(next);
     if (Object.keys(next).length) return;
     setPending(true);

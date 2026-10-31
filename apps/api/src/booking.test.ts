@@ -291,3 +291,27 @@ it("safely retries when the request or its successful response is lost", async (
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it("rejects email addresses containing consecutive dots", async () => {
+  const app = buildApp({ now: () => Date.parse("2026-10-30T08:00:00Z") });
+  try {
+    for (const guestEmail of ["a..b@example.com", "a@example..com"]) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/bookings",
+        headers: { "idempotency-key": "key" },
+        payload: {
+          meetingTypeId: "id",
+          meetingTypeVersion: 1,
+          startsAt: "2026-10-30T09:00:00Z",
+          guestName: "Guest",
+          guestEmail,
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().fields).toHaveProperty("guestEmail");
+    }
+  } finally {
+    await app.close();
+  }
+});

@@ -56,3 +56,32 @@ it("persists the attempt before sending, preserving it when the response is lost
     unknown.mock.calls[0][0],
   );
 });
+
+it("prevents navigation and edits while a booking is being sent", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => new Promise(() => {})),
+  );
+  render(
+    <MantineProvider>
+      <BookingForm
+        type={{ id: "one", name: "Call", description: "Intro", durationMinutes: 30, version: 1 }}
+        startsAt="2026-11-02T09:00:00.000Z"
+        name="Alice"
+        email="a@example.com"
+        setName={() => {}}
+        setEmail={() => {}}
+        onBack={() => {}}
+        onConflict={() => {}}
+        onTypeChanged={() => {}}
+        onSuccess={() => {}}
+        onUnknown={() => {}}
+        onPendingChange={() => {}}
+      />
+    </MantineProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+  expect(screen.getByRole("button", { name: "Изменить время" })).toBeDisabled();
+  expect(screen.getByLabelText(/Имя/)).toBeDisabled();
+  expect(screen.getByLabelText(/Email/)).toBeDisabled();
+});

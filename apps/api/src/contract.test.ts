@@ -255,13 +255,13 @@ test("booking responses and required no-store header match OpenAPI", async () =>
   const api = new OpenAPIBackend({ definition, strict: true });
   await api.init();
   try {
-    const type = (
-      await app.inject({
-        method: "POST",
-        url: "/api/meeting-types",
-        payload: { name: "Call", description: "Intro", durationMinutes: 30 },
-      })
-    ).json();
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const typeResponse = await fetch(`${address}/api/meeting-types`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Call", description: "Intro", durationMinutes: 30 }),
+    });
+    const type = await typeResponse.json();
     const payload = {
       meetingTypeId: type.id,
       meetingTypeVersion: 1,
@@ -270,28 +270,40 @@ test("booking responses and required no-store header match OpenAPI", async () =>
       guestEmail: "g@example.com",
     };
     const send = (data: object, key: string) =>
-      app.inject({
+      fetch(`${address}/api/bookings`, {
         method: "POST",
-        url: "/api/bookings",
-        payload: data,
-        headers: { "idempotency-key": key },
+        headers: { "content-type": "application/json", "idempotency-key": key },
+        body: JSON.stringify(data),
       });
-    async function validate(response: Awaited<ReturnType<typeof send>>, status: number) {
-      expect(response.statusCode).toBe(status);
-      expect(api.validateResponse(response.json(), "createBooking", status).errors).toBeNull();
-      expect(response.headers["cache-control"]).toBe("no-store");
-      expect(response.body).not.toContain("secret-key");
+    async function validate(response: Response, status: number, code?: string) {
+      expect(response.status).toBe(status);
+      const body = await response.text();
+      const parsed = JSON.parse(body);
+      expect(api.validateResponse(parsed, "createBooking", status).errors).toBeNull();
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(body).not.toContain("secret-key");
+      if (code) expect(parsed.code).toBe(code);
+      return body;
     }
     await validate(await send({ ...payload, guestEmail: "bad" }, "bad"), 400);
     await validate(await send(payload, "secret-key"), 201);
-    await validate(await send(payload, "different-key"), 409);
+    await validate(await send(payload, "different-key"), 409, "SLOT_UNAVAILABLE");
+    await validate(
+      await send({ ...payload, meetingTypeVersion: 2 }, "changed-type"),
+      409,
+      "MEETING_TYPE_CHANGED",
+    );
+    await validate(
+      await send({ ...payload, guestName: "Another" }, "secret-key"),
+      409,
+      "IDEMPOTENCY_KEY_REUSED",
+    );
     db.exec("BEGIN IMMEDIATE");
     await validate(await send({ ...payload, startsAt: "2026-10-30T10:00:00.000Z" }, "busy"), 503);
     db.exec("ROLLBACK");
     db.exec("DROP TABLE bookings");
     const failure = await send(payload, "error");
-    await validate(failure, 500);
-    expect(failure.body).not.toContain("bookings");
+    expect(await validate(failure, 500)).not.toContain("bookings");
   } finally {
     db.close();
     await app.close();

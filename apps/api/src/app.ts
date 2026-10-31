@@ -3,6 +3,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq, gt, lt } from "drizzle-orm";
 import { openDatabase } from "./database.js";
 import { bookings, meetingTypes } from "./schema.js";
+import { isValidEmail } from "./email.js";
+import { validateMeetingType } from "./meeting-type-validation.js";
 import { calculateSlots, DAY, parseDate, windowStart } from "./availability.js";
 
 export function buildApp(
@@ -49,21 +51,7 @@ export function buildApp(
       .all(),
   );
   app.post("/api/meeting-types", async (request, reply) => {
-    const input = request.body as Record<string, unknown> | null;
-    const name = typeof input?.name === "string" ? input.name.trim() : "";
-    const description = typeof input?.description === "string" ? input.description.trim() : "";
-    const durationMinutes = input?.durationMinutes;
-    const fields: Record<string, string> = {};
-    if (!name || [...name].length > 100) fields.name = "Введите название до 100 символов";
-    if (!description || [...description].length > 1000)
-      fields.description = "Введите описание до 1000 символов";
-    if (
-      typeof durationMinutes !== "number" ||
-      !Number.isInteger(durationMinutes) ||
-      durationMinutes < 1 ||
-      durationMinutes > 2147483647
-    )
-      fields.durationMinutes = "Введите целое число от 1 до 2147483647";
+    const { name, description, durationMinutes, fields } = validateMeetingType(request.body);
     if (Object.keys(fields).length || typeof durationMinutes !== "number")
       return reply
         .status(400)
@@ -89,21 +77,7 @@ export function buildApp(
       .send({ id, name, description, durationMinutes, version });
   });
   app.put<{ Params: { id: string } }>("/api/meeting-types/:id", async (request, reply) => {
-    const input = request.body as Record<string, unknown> | null;
-    const name = typeof input?.name === "string" ? input.name.trim() : "";
-    const description = typeof input?.description === "string" ? input.description.trim() : "";
-    const durationMinutes = input?.durationMinutes;
-    const fields: Record<string, string> = {};
-    if (!name || [...name].length > 100) fields.name = "Введите название до 100 символов";
-    if (!description || [...description].length > 1000)
-      fields.description = "Введите описание до 1000 символов";
-    if (
-      typeof durationMinutes !== "number" ||
-      !Number.isInteger(durationMinutes) ||
-      durationMinutes < 1 ||
-      durationMinutes > 2147483647
-    )
-      fields.durationMinutes = "Введите целое число от 1 до 2147483647";
+    const { name, description, durationMinutes, fields } = validateMeetingType(request.body);
     const match = request.headers["if-match"];
     const result = storage.db.transaction(
       (tx) => {
@@ -266,7 +240,7 @@ export function buildApp(
     const email = typeof input?.guestEmail === "string" ? input.guestEmail.trim() : "";
     const fields: Record<string, string> = {};
     if (!name || [...name].length > 100) fields.guestName = "Введите имя до 100 символов";
-    if (!email || [...email].length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email))
+    if (!email || [...email].length > 254 || !isValidEmail(email))
       fields.guestEmail = "Введите корректный email до 254 символов";
     const startsAt = typeof input?.startsAt === "string" ? input.startsAt : "";
     const start = Date.parse(startsAt);
