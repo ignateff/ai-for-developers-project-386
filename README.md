@@ -71,6 +71,8 @@ mise run test        # дымовой тест
 
 Для явного выбора портов задайте `PORT` (API) и/или `WEB_PORT` (frontend), например `PORT=3100 WEB_PORT=5180 mise run dev`. Занятый явно заданный порт вызывает ошибку. `API_PROXY_TARGET` позволяет явно задать адрес API для прокси frontend. Для запуска каждого сервера на переднем плане используйте `mise run dev-api` и `mise run dev-web` в разных терминалах.
 
+Настройка GitHub App и порядок выпуска описаны в [инструкции по релизам](docs/release.md).
+
 ---
 
 <details>
