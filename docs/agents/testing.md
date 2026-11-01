@@ -6,6 +6,8 @@
 
 `apps/api/src/contract.test.ts` validates real HTTP responses against OpenAPI. Add a contract test for each response scenario of every new operation, including distinct error scenarios sharing a status code. Tests named `contract.test.ts` or `*.contract.test.ts` must use real HTTP; `mise run check:contract-http` rejects `inject()` calls in those files. Reviewers must still check scenario coverage and test semantics. Other test files may use Fastify injection where real HTTP is not required by the specification.
 
+The HTTP guardrail is a syntactic check, not proof that a test uses real HTTP: it does not follow calls into helpers or detect an `inject` method called through an alias. Reviewers must check these cases too.
+
 Integration tests use SQLite and controlled clocks and failures where the behavior requires them. For booking retries, exercise failures both before the request reaches the server and after persistence but before the response reaches the client.
 
 ## Web and end-to-end
