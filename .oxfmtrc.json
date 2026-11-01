@@ -1,6 +1,8 @@
 {
   "ignorePatterns": [
     "generated/**",
+    "CHANGELOG.md",
+    ".release-please-manifest.json",
     ".agents/skills/**",
     "pnpm-lock.yaml",
     ".github/workflows/hexlet-check.yml",
