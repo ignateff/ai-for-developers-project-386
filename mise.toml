@@ -42,7 +42,7 @@ pnpm add -Dw "${packages[@]}"
 
 [tasks.dev]
 description = "Start API and web dev servers (pitchfork daemons)"
-run = ["mise daemons start", "mise daemons ls"]
+run = "node scripts/dev-start.mjs"
 
 [tasks.install-hooks]
 description = "Install shared Git hooks"
@@ -120,8 +120,11 @@ run = [
 
 [daemons.api]
 run = "exec pnpm --filter @calendar/api dev"
-ready_port = 3000
+port = { expect = [3000], bump = true }
+ready_cmd = "curl -fsS http://127.0.0.1:$PORT/api/health > /dev/null"
 
 [daemons.web]
-run = "exec pnpm --filter @calendar/web dev"
-ready_port = 5173
+run = '''target=$(node scripts/dev-target.mjs); API_PROXY_TARGET=${target:-http://127.0.0.1:{{ daemons.api.port }}} exec pnpm --filter @calendar/web dev --port $PORT --strictPort'''
+port = { expect = [5173], bump = true }
+depends = ["api"]
+ready_cmd = "curl -fsS http://127.0.0.1:$PORT/ > /dev/null"
