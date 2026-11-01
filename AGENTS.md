@@ -30,6 +30,7 @@
 - Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope)!: description`. Scope and `!` are optional; include the colon and space, then a concise English description. Example: `feat(api): add booking endpoint`.
 - Use `feat` for a new feature and `fix` for a bug fix. Other types include `docs`, `refactor`, `test`, `build`, `ci`, `chore`, `perf`, and `style`.
 - Add an optional body after a blank line to explain context. Add optional footers after a blank line, using `Token: value` or `Token #value`, for example `Refs: #123`.
+- Every implementation commit must reference its relevant GitHub issue in the message, for example `Refs: #123`. For pre-existing commits without references, see `docs/agents/implementation-traceability.md`.
 - Write the entire commit message in English: header, body, and footers.
 - Mark a breaking change with `!` before the colon or an uppercase `BREAKING CHANGE: description` footer. When using `!` without the footer, describe the breaking change in the header.
 - After pushing to `main`, verify the latest CI run with `gh run list` — a green run is part of finishing the task (the workflow cancels superseded runs, so judge the final pushed state).
