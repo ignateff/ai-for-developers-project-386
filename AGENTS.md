@@ -20,6 +20,7 @@
 
 ## Worktrees
 
+- Create ordinary Git worktrees beside the main checkout at `<repo>.worktree/<branch-slug>`, replacing `/` with `-`. Check `git worktree list` first; if the destination exists, verify ownership before reuse. Managed worktree tools may choose their own paths and lifecycle.
 - For an isolated checkout, use the `using-git-worktrees` skill when available. Run the install commands above in every worktree, including an integration worktree, before its checks or push; installing shared Git hooks is not required for each worktree.
 - Before an agent or its worktree is removed, verify its changes are committed on a reachable branch or saved in a verified patch outside temporary storage. Confirm the result is recoverable before cleanup.
 - `mise run dev` selects free API and web ports per checkout and prints the web URL; see `README.md` for explicit ports. `mise daemons stop` stops only the current checkout's daemons.
