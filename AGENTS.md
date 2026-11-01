@@ -22,7 +22,7 @@
 
 - For an isolated checkout, use the `using-git-worktrees` skill when available. Run the install commands above in every worktree, including an integration worktree, before its checks or push; installing shared Git hooks is not required for each worktree.
 - Before an agent or its worktree is removed, verify its changes are committed on a reachable branch or saved in a verified patch outside temporary storage. Confirm the result is recoverable before cleanup.
-- The default API and web ports are 3000 and 5173; the Vite proxy targets API port 3000. Check for existing services before starting another copy. No parallel-port configuration is currently documented, so do not assume changing one port isolates the full application.
+- `mise run dev` selects free API and web ports per checkout and prints the web URL; see `README.md` for explicit ports. `mise daemons stop` stops only the current checkout's daemons.
 - The scaffold does not require environment variables. If a later task needs ignored configuration, set it up explicitly without copying secrets automatically.
 
 ## Commit messages
