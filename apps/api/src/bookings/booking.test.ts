@@ -184,8 +184,97 @@ it("serializes competing requests on independent SQLite connections and permits 
       { payload: same, key: "same-key" },
       { payload: same, key: "same-key" },
     ]);
-    expect(repeated.map((r) => r.status)).toEqual([201, 201]);
-    expect(repeated[0].body).toEqual(repeated[1].body);
+    const success = repeated.find((response) => response.status === 201);
+    expect(success).toBeDefined();
+    for (const response of repeated) {
+      if (response.status === 503) {
+        expect(response.body.code).toBe("DATABASE_BUSY");
+      } else {
+        expect(response.status).toBe(201);
+        expect(response.body).toEqual(success?.body);
+      }
+    }
+    for (const worker of workers) {
+      const replayResponse = new Promise<{ status: number; body: object }>((resolve) =>
+        worker.once("message", (message) => resolve(message as { status: number; body: object })),
+      );
+      worker.send({ payload: same, key: "same-key" });
+      const replay = await replayResponse;
+      expect(replay.status).toBe(201);
+      expect(replay.body).toEqual(success?.body);
+    }
+  } finally {
+    workers.forEach((worker) => worker.kill());
+    await app.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+}, 15000);
+
+it("replays the same attempt after a concurrent SQLite lock", async () => {
+  const { fork } = await import("node:child_process");
+  const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = mkdtempSync(join(tmpdir(), "calendar-same-race-"));
+  const path = join(directory, "db.sqlite");
+  const release = join(directory, "release");
+  const app = buildApp({ databasePath: path, now: () => Date.parse("2026-10-30T08:00:00Z") });
+  const workers: import("node:child_process").ChildProcess[] = [];
+  try {
+    const type = (
+      await app.inject({
+        method: "POST",
+        url: "/api/meeting-types",
+        payload: { name: "Call", description: "Intro", durationMinutes: 30 },
+      })
+    ).json();
+    for (let i = 0; i < 2; i++) {
+      const worker = fork(
+        "apps/api/test-support/booking-worker.ts",
+        i === 0 ? [path, release] : [path],
+        { execArgv: ["--import", "tsx"], stdio: ["ignore", "ignore", "inherit", "ipc"] },
+      );
+      workers.push(worker);
+      await new Promise<void>((resolve, reject) => {
+        worker.once("message", () => resolve());
+        worker.once("error", reject);
+      });
+    }
+    const request = {
+      key: "same-key",
+      payload: {
+        meetingTypeId: type.id,
+        meetingTypeVersion: 1,
+        startsAt: "2026-10-30T11:00:00.000Z",
+        guestName: "Guest",
+        guestEmail: "g@example.com",
+      },
+    };
+    const receive = (index: number) =>
+      new Promise<{ status: number; body: { id?: string } }>((resolve) =>
+        workers[index].once("message", (message) =>
+          resolve(message as { status: number; body: { id?: string } }),
+        ),
+      );
+    const locked = receive(0);
+    workers[0].send(request);
+    await locked;
+    const competing = receive(1);
+    workers[1].send(request);
+    const second = await competing;
+    const firstResponse = receive(0);
+    writeFileSync(release, "release");
+    const first = await firstResponse;
+    expect(second).toMatchObject({ status: 503, body: { code: "DATABASE_BUSY" } });
+    expect(first.status).toBe(201);
+    const replayResponse = receive(1);
+    workers[1].send(request);
+    const replay = await replayResponse;
+    expect(replay.status).toBe(201);
+    expect(replay.body).toEqual(first.body);
+    const events = (await app.inject({ method: "GET", url: "/api/events/upcoming" })).json();
+    expect(events).toHaveLength(1);
+    expect(events[0].id).toBe(first.body.id);
   } finally {
     workers.forEach((worker) => worker.kill());
     await app.close();
