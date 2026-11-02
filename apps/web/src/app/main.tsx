@@ -8,6 +8,7 @@ import "@fontsource/inter/cyrillic-600.css";
 import "@fontsource/inter/cyrillic-700.css";
 import "@mantine/core/styles.css";
 import "./theme.css";
+import "./log-version";
 import { MantineProvider } from "@mantine/core";
 import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
