@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-02)
+
+
+### Features
+
+* **api:** add Dockerfile for containerized deployment ([930f47b](https://github.com/ignateff/ai-for-developers-project-386/commit/930f47bdf2e6b64d571063d5d7d25c1ee0c846b5))
+* **api:** add Dockerfile for containerized deployment ([eed024d](https://github.com/ignateff/ai-for-developers-project-386/commit/eed024dbfe7537a12bce3570bd923d47366bc466)), closes [#47](https://github.com/ignateff/ai-for-developers-project-386/issues/47)
+* configure Fly.io app with volume and health check ([160be62](https://github.com/ignateff/ai-for-developers-project-386/commit/160be62418cdbb558fa3673a8a27cfe1805d7af6)), closes [#47](https://github.com/ignateff/ai-for-developers-project-386/issues/47)
+
 ## 0.1.0 (2026-11-01)
 
 
