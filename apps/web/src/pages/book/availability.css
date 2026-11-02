@@ -352,6 +352,15 @@ button.calendar-day {
   cursor: default;
 }
 
+.slot:disabled:not(.is-busy) {
+  opacity: 0.5;
+}
+
+.slots-state + .slots-grid,
+.slots-body .alert + .slots-grid {
+  margin-top: 12px;
+}
+
 .slots-footer {
   margin-top: 18px;
 }
