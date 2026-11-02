@@ -66,6 +66,10 @@ run = "pnpm run lint"
 [tasks.typecheck]
 run = "pnpm run typecheck"
 
+[tasks."check:quick"]
+description = "Run fast local checks without starting development daemons"
+run = "pnpm run check:quick"
+
 [tasks.test]
 run = "pnpm run test"
 

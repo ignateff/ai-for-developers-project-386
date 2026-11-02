@@ -4,14 +4,14 @@ hooks {
   ["pre-commit"] {
     steps {
       ["check"] {
-        check = "mise run check"
+        check = "mise run check:quick"
       }
     }
   }
   ["pre-push"] {
     steps {
       ["check"] {
-        check = "mise run check"
+        check = "mise run check:quick"
       }
     }
   }
