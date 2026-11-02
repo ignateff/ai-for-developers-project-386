@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.3.0...v0.3.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **tooling:** isolate dev tests and shorten Git hooks ([ba0f41e](https://github.com/ignateff/ai-for-developers-project-386/commit/ba0f41e724e5a8dcd8aeaba2d6b44a7865b087ff))
+* **tooling:** isolate dev tests and shorten Git hooks ([df18028](https://github.com/ignateff/ai-for-developers-project-386/commit/df18028ab3716190df8cce9dd3d74746bf230c9b)), closes [#60](https://github.com/ignateff/ai-for-developers-project-386/issues/60)
+
 ## [0.3.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-02)
 
 
