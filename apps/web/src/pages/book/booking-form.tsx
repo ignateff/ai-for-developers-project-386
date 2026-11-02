@@ -142,7 +142,7 @@ export function BookingForm({
           <button type="submit" className="btn btn-accent form-submit" disabled={pending}>
             Подтвердить запись
           </button>
-          <p className="form-hint">Детали встречи будут отправлены на вашу почту</p>
+          <p className="form-hint">После подтверждения сохраните детали записи.</p>
         </div>
       </form>
     </section>
