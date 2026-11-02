@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.3.1...v0.4.0) (2026-11-02)
+
+
+### Features
+
+* **web:** log frontend release and build revision ([2d8e2f1](https://github.com/ignateff/ai-for-developers-project-386/commit/2d8e2f13a1397797a47b5fbc446935e9cd69ed91))
+* **web:** log frontend release and build revision ([3941650](https://github.com/ignateff/ai-for-developers-project-386/commit/394165061332289fb59cda085b371db838f2d929)), closes [#64](https://github.com/ignateff/ai-for-developers-project-386/issues/64)
+
 ## [0.3.1](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.3.0...v0.3.1) (2026-11-02)
 
 
