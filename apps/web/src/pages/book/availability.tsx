@@ -44,6 +44,7 @@ export function Availability({
   const [conflict, setConflict] = useState("");
   const [date, setDate] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [staleSlots, setStaleSlots] = useState<Record<string, unknown>>({});
   const summary = useQuery({
     queryKey: ["availability", type.id],
     queryFn: async () => {
@@ -56,6 +57,8 @@ export function Availability({
   const slots = useQuery({
     queryKey: ["slots", type.id, date],
     enabled: date !== null,
+    structuralSharing: false,
+    retry: false,
     queryFn: async () => {
       const response = await availabilitySlots(type.id, { date: date! });
       if (response.status === 404) throw new Error("TYPE_REMOVED");
@@ -63,6 +66,11 @@ export function Availability({
       return response.data;
     },
   });
+  const slotsBlocked = Boolean(
+    date &&
+    Object.hasOwn(staleSlots, date) &&
+    (slots.isFetching || slots.isError || slots.data === staleSlots[date]),
+  );
   const removed =
     summary.error?.message === "TYPE_REMOVED" || slots.error?.message === "TYPE_REMOVED";
   const outdated = Boolean(
@@ -146,6 +154,7 @@ export function Availability({
               setFormOpen(false);
               setSelected(null);
               setConflict("Слот уже недоступен. Выберите другое время.");
+              if (date) setStaleSlots((previous) => ({ ...previous, [date]: slots.data }));
               void slots.refetch();
               void summary.refetch();
             }}
@@ -223,7 +232,11 @@ export function Availability({
                 <p>Выберите дату, чтобы увидеть доступное время.</p>
               </div>
             )}
-            {date && slots.isPending && <p className="slots-state">Загрузка слотов…</p>}
+            {date && (slots.isPending || (slotsBlocked && slots.isFetching)) && (
+              <p className="slots-state" role="status">
+                {slots.isPending ? "Загрузка слотов…" : "Обновление слотов…"}
+              </p>
+            )}
             {date && slots.isError && (
               <div role="alert" className="alert">
                 Не удалось загрузить слоты.{" "}
@@ -256,7 +269,7 @@ export function Availability({
                       key={slot.startsAt}
                       type="button"
                       className={className}
-                      disabled={!slot.available || outdated}
+                      disabled={!slot.available || outdated || slotsBlocked}
                       aria-pressed={isSelected}
                       onClick={() => setSelected(slot.startsAt)}
                     >
@@ -281,7 +294,7 @@ export function Availability({
               <button
                 type="button"
                 className="btn btn-accent"
-                disabled={!selected || outdated}
+                disabled={!selected || outdated || slotsBlocked}
                 onClick={() => setFormOpen(true)}
               >
                 Продолжить
