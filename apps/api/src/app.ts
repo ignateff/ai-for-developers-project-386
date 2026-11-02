@@ -8,6 +8,13 @@ import { meetingTypeRoutes } from "./meeting-types/routes.js";
 import { availabilityRoutes } from "./availability/routes.js";
 import { bookingRoutes } from "./bookings/routes.js";
 import { eventRoutes } from "./events/routes.js";
+import { errorCategory } from "./safe-error.js";
+
+function safeMethod(method: string) {
+  return ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].includes(method)
+    ? method
+    : "OTHER";
+}
 
 export function buildApp(
   options: {
@@ -33,7 +40,7 @@ export function buildApp(
   app.addHook("onResponse", async (request, reply) => {
     request.log.info(
       {
-        method: request.method,
+        method: safeMethod(request.method),
         route: request.routeOptions.url ?? "unmatched",
         statusCode: reply.statusCode,
       },
@@ -56,7 +63,12 @@ export function buildApp(
       cause = cause.cause;
     }
     request.log.error(
-      { method: request.method, route: request.routeOptions.url ?? "unmatched", statusCode: 500 },
+      {
+        method: safeMethod(request.method),
+        route: request.routeOptions.url ?? "unmatched",
+        statusCode: 500,
+        errorCategory: errorCategory(error),
+      },
       "Unexpected request error",
     );
     void reply.status(500).send({ code: "INTERNAL_ERROR", message: "Не удалось выполнить запрос" });
