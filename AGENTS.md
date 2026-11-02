@@ -23,6 +23,7 @@
 - The app deploys to Fly.io Machines as a single Docker container built from the root `Dockerfile`; Fastify serves the API and the built frontend, listening on `PORT`.
 - For anything deployment-related — `fly launch`, `fly deploy`, `fly.toml` changes, volumes, debugging a live app — use the project skill `.agents/skills/fly-deploy`. Do not improvise Fly.io commands outside it.
 - Researched Fly.io reference with sources: `docs/research/fly-io-cli-deploy.md`.
+- For a Render deployment or Render MCP setup, follow `docs/deploy/render.md`; the Render Free demo has ephemeral SQLite storage.
 
 ## Worktrees
 
