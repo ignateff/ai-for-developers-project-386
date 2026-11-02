@@ -2,6 +2,14 @@
 
 `mise run check` runs lint, formatting, types, Vitest, Playwright, contract and generated-artifact checks, build, and workflow lint. CI runs the same check after installing Chromium.
 
+Local pre-commit and pre-push hooks run `mise run check:quick` (lint, formatting and types), without starting dev daemons. This is not a replacement for the full CI check; require a successful `check` status before merging. Run `mise run check` explicitly for full local validation.
+
+## Development lifecycle tests
+
+`mise run test -- scripts/dev.test.ts` checks real `mise run dev` behavior in temporary checkouts. The suite uses its own Pitchfork supervisor, registry, logs and mise state, shared between its checkouts to exercise independent routing and shutdown. It leaves user daemon state unchanged. A short temporary directory under the home directory keeps the Unix socket within macOS path limits. TCP ports remain shared with the host and use the application's port allocation.
+
+Subprocesses are awaited asynchronously with bounded command timeouts and captured output. On startup failure, the error includes daemon state and the isolated log directory. Cleanup tries every owned checkout and verifies terminal state with no PID before deleting it (an intentionally failed daemon can remain `errored`). Failed cleanup preserves the affected checkout and state for inspection. Filtered test runs create only the checkouts they use. The suite does not clear or prune global daemon state.
+
 ## API
 
 `apps/api/src/contract.test.ts` validates real HTTP responses against OpenAPI. Add a contract test for each response scenario of every new operation, including distinct error scenarios sharing a status code. Tests named `contract.test.ts` or `*.contract.test.ts` must use real HTTP; `mise run check:contract-http` rejects `inject()` calls in those files. Reviewers must still check scenario coverage and test semantics. Other test files may use Fastify injection where real HTTP is not required by the specification.
