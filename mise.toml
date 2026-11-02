@@ -86,6 +86,10 @@ run = "pnpm run test:e2e:visual:update:linux"
 [tasks.build]
 run = "pnpm run build"
 
+[tasks.start]
+description = "Run the built API server (serves the built frontend when present)"
+run = "pnpm --filter @calendar/api start"
+
 [tasks.generate]
 description = "Regenerate OpenAPI spec and SDK from TypeSpec contract"
 run = "pnpm run generate"
