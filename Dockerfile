@@ -15,7 +15,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN pnpm run build
+ARG APP_REVISION=unknown
+RUN APP_REVISION="$APP_REVISION" pnpm run build
 
 EXPOSE 3000
 

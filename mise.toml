@@ -90,6 +90,10 @@ run = "pnpm run test:e2e:visual:update:linux"
 [tasks.build]
 run = "pnpm run build"
 
+[tasks."build:docker"]
+description = "Build the Docker image with the current source revision"
+run = "pnpm run build:docker"
+
 [tasks.start]
 description = "Run the built API server (serves the built frontend when present)"
 run = "pnpm --filter @calendar/api start"
