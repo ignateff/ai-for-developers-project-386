@@ -18,6 +18,12 @@
 - **Screenshots in `docs/design/screenshots/` are outdated** — they exist only for historical context and should NOT be used for implementation reference.
 - Functional requirements live in linked GitHub Issues. If the design file disagrees with an approved issue, raise the discrepancy — do not silently change the agreed requirement.
 
+## Deployment
+
+- The app deploys to Fly.io Machines as a single Docker container built from the root `Dockerfile`; Fastify serves the API and the built frontend, listening on `PORT`.
+- For anything deployment-related — `fly launch`, `fly deploy`, `fly.toml` changes, volumes, debugging a live app — use the project skill `.agents/skills/fly-deploy`. Do not improvise Fly.io commands outside it.
+- Researched Fly.io reference with sources: `docs/research/fly-io-cli-deploy.md`.
+
 ## Worktrees
 
 - Create ordinary Git worktrees beside the main checkout at `<repo>.worktree/<branch-slug>`, replacing `/` with `-`. Check `git worktree list` first; if the destination exists, verify ownership before reuse. Managed worktree tools may choose their own paths and lifecycle.

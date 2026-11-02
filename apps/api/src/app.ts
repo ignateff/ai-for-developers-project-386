@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import Fastify, { type onRouteHookHandler } from "fastify";
+import fastifyStatic from "@fastify/static";
 import { openDatabase } from "./database/database.js";
 import { meetingTypeRoutes } from "./meeting-types/routes.js";
 import { availabilityRoutes } from "./availability/routes.js";
@@ -43,5 +46,19 @@ export function buildApp(
     now: options.now,
     onBookingLocked: options.onBookingLocked,
   });
+  // Serve the built frontend when it exists (production image); dev uses the Vite server instead.
+  const webDist = fileURLToPath(new URL("../../web/dist", import.meta.url));
+  if (existsSync(webDist)) {
+    app.register(fastifyStatic, { root: webDist });
+    app.setNotFoundHandler((request, reply) => {
+      if (request.method === "GET" && !request.url.startsWith("/api/"))
+        return reply.sendFile("index.html");
+      return reply.status(404).send({
+        message: `Route ${request.method}:${request.url} not found`,
+        error: "Not Found",
+        statusCode: 404,
+      });
+    });
+  }
   return app;
 }
