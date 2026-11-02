@@ -126,8 +126,16 @@ test("booking confirmation form", async ({ page, request }) => {
   await page.getByRole("button", { name: "09:00 UTC" }).click();
   await page.getByRole("button", { name: "Продолжить" }).click();
   await expect(page.getByRole("heading", { name: "Подтверждение записи" })).toBeVisible();
+  await expect(page.getByText("После подтверждения сохраните детали записи.")).toBeVisible();
+  await expect(page.getByText(/детали.*отправ.*почт/i)).toHaveCount(0);
   await settle(page);
   await expect(page).toHaveScreenshot("booking-form-desktop.png", {
+    fullPage: true,
+    animations: "disabled",
+    caret: "hide",
+  });
+  await page.setViewportSize(NARROW);
+  await expect(page).toHaveScreenshot("booking-form-narrow.png", {
     fullPage: true,
     animations: "disabled",
     caret: "hide",
@@ -144,8 +152,16 @@ test("booking success", async ({ page, request }) => {
   await page.getByLabel("Email").fill("anna@example.com");
   await page.getByRole("button", { name: "Подтвердить запись" }).click();
   await expect(page.getByRole("heading", { name: "Бронь подтверждена" })).toBeVisible();
+  await expect(page.getByText("До встречи! Сохраните детали записи самостоятельно.")).toBeVisible();
+  await expect(page.getByText(/детали.*отправ.*почт/i)).toHaveCount(0);
+  await expect(page.getByText(/Интервью.*09:00.*09:30.*UTC/)).toBeVisible();
   await settle(page);
   await expect(page).toHaveScreenshot("booking-success-desktop.png", {
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.setViewportSize(NARROW);
+  await expect(page).toHaveScreenshot("booking-success-narrow.png", {
     fullPage: true,
     animations: "disabled",
   });

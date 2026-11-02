@@ -21,7 +21,7 @@ export function BookingSuccess({
         <Check size={24} strokeWidth={2.5} />
       </div>
       <h2 className="success-title">Бронь подтверждена</h2>
-      <p className="success-text">До встречи! Детали отправлены на вашу почту.</p>
+      <p className="success-text">До встречи! Сохраните детали записи самостоятельно.</p>
       <div className="success-details">
         <CalendarDays size={20} strokeWidth={2} aria-hidden />
         <span>
