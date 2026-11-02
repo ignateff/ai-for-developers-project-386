@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-02)
+
+
+### Features
+
+* **api:** add safe structured logging ([f1c12c9](https://github.com/ignateff/ai-for-developers-project-386/commit/f1c12c9110839f2931715e978eb15c1d0b60088d)), closes [#54](https://github.com/ignateff/ai-for-developers-project-386/issues/54)
+* **web:** add calendar favicon ([11bc396](https://github.com/ignateff/ai-for-developers-project-386/commit/11bc3964feb4dabad4d6b462c28952ac302f7791)), closes [#53](https://github.com/ignateff/ai-for-developers-project-386/issues/53)
+
+
+### Bug Fixes
+
+* improve safe diagnostics and verify slot refresh race ([920d3c2](https://github.com/ignateff/ai-for-developers-project-386/commit/920d3c2767f07414163210a2d3c70808f20d6ade)), closes [#51](https://github.com/ignateff/ai-for-developers-project-386/issues/51) [#54](https://github.com/ignateff/ai-for-developers-project-386/issues/54)
+* **web:** block stale slots after booking conflict ([d4e3d18](https://github.com/ignateff/ai-for-developers-project-386/commit/d4e3d18ed09ad288bd083259c84f5ad0882de4a6)), closes [#51](https://github.com/ignateff/ai-for-developers-project-386/issues/51)
+* **web:** correct booking confirmation copy ([04a8dcd](https://github.com/ignateff/ai-for-developers-project-386/commit/04a8dcd51c592c8509231df803d969f71aef2308)), closes [#52](https://github.com/ignateff/ai-for-developers-project-386/issues/52)
+
 ## [0.2.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-02)
 
 
