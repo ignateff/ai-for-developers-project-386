@@ -15,13 +15,13 @@ const app = buildApp({
   databasePath: process.argv[2],
   now: () => Date.parse("2026-10-30T08:00:00Z"),
 });
+const address = await app.listen({ host: "127.0.0.1", port: 0 });
 process.on("message", async (message: { payload: object; key: string }) => {
-  const response = await app.inject({
+  const response = await fetch(`${address}/api/bookings`, {
     method: "POST",
-    url: "/api/bookings",
-    payload: message.payload,
-    headers: { "idempotency-key": message.key },
+    body: JSON.stringify(message.payload),
+    headers: { "content-type": "application/json", "idempotency-key": message.key },
   });
-  process.send?.({ status: response.statusCode, body: response.json() });
+  process.send?.({ status: response.status, body: await response.json() });
 });
 process.send?.({ ready: true });
