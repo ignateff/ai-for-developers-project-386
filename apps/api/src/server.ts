@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { DatabaseStartupError, errorCategory } from "./safe-error.js";
 
 // CALENDAR_FIXED_NOW pins the server's clock (epoch ms) for deterministic e2e/visual runs.
 let stage = "configuration";
@@ -15,9 +16,20 @@ try {
     listenTextResolver: () => "Server listening",
   });
   app.log.info({ event: "startup_complete" }, "API started");
-} catch {
+} catch (error) {
+  if (error instanceof DatabaseStartupError) stage = error.stage;
+  const category = errorCategory(error);
   console.error(
-    JSON.stringify({ level: 50, event: "startup_failed", stage, msg: "API startup failed" }),
+    JSON.stringify({
+      level: 50,
+      event: "startup_failed",
+      stage,
+      errorCategory:
+        category === "unknown" && error instanceof DatabaseStartupError
+          ? `${error.stage}_failed`
+          : category,
+      msg: "API startup failed",
+    }),
   );
   process.exitCode = 1;
 }
