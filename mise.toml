@@ -94,6 +94,10 @@ run = "pnpm run build"
 description = "Build the Docker image with the current source revision"
 run = "pnpm run build:docker"
 
+[tasks."deploy:prepare"]
+description = "Prepare a verified local deployment image (does not publish)"
+run = "pnpm run deploy:prepare"
+
 [tasks.start]
 description = "Run the built API server (serves the built frontend when present)"
 run = "pnpm --filter @calendar/api start"
