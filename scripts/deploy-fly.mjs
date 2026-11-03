@@ -49,13 +49,16 @@ function findFly() {
   } catch {
     // fall through to the documented installer location
   }
-  const fallback = join(homedir(), ".fly", "bin", "flyctl");
-  try {
-    accessSync(fallback, constants.X_OK);
-    return fallback;
-  } catch {
-    throw new Error("Fly CLI not found on PATH or at ~/.fly/bin/flyctl");
+  for (const candidate of ["flyctl", "fly"]) {
+    const fallback = join(homedir(), ".fly", "bin", candidate);
+    try {
+      accessSync(fallback, constants.X_OK);
+      return fallback;
+    } catch {
+      // try the next documented installer location
+    }
   }
+  throw new Error("Fly CLI not found on PATH or under ~/.fly/bin/");
 }
 
 function appName() {
@@ -64,7 +67,18 @@ function appName() {
   return match[1];
 }
 
+function checkoutState() {
+  if (git("branch", "--show-current") !== "main")
+    throw new Error("checkout must already be on main");
+  if (git("status", "--porcelain=v1", "--untracked-files=all"))
+    throw new Error("checkout is dirty or has untracked files");
+}
+
+// Check the caller's branch first: fetching or fast-forwarding must never move
+// a feature branch, so branch/dirty checks run before any ref update and again
+// afterwards, before trusting the revision.
 function gate(expectedRevision) {
+  checkoutState();
   git(
     "fetch",
     "--no-tags",
@@ -76,10 +90,7 @@ function gate(expectedRevision) {
     "refs/heads/main:refs/remotes/origin/main",
   );
   git("merge", "--ff-only", "--no-overwrite-ignore", "origin/main");
-  if (git("branch", "--show-current") !== "main")
-    throw new Error("checkout must already be on main");
-  if (git("status", "--porcelain=v1", "--untracked-files=all"))
-    throw new Error("checkout is dirty or has untracked files");
+  checkoutState();
   const refs = git("rev-parse", "HEAD", "refs/heads/main", "refs/remotes/origin/main").split("\n");
   if (refs.length !== 3 || !refs.every((ref) => sha.test(ref) && ref === refs[0]))
     throw new Error("HEAD, local main and origin/main must be identical full revisions");
@@ -207,8 +218,20 @@ function publish(fly, app, record) {
   try {
     run("docker", ["push", tag], { stdio: "inherit", timeout: 30 * 60_000 });
   } catch (error) {
+    // The push may have completed on the registry even though the client failed.
+    let observed = "registry state could not be read";
+    try {
+      const manifest = run("docker", ["manifest", "inspect", "--verbose", tag], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 60_000,
+      });
+      observed = `manifest exists: ${manifest.trim().slice(0, 500)}`;
+    } catch {
+      observed = `no manifest readable for ${tag}`;
+    }
     throw new Error(
-      `registry push failed or was interrupted; verify whether ${tag} was published before retrying: ${error.message}`,
+      `registry push outcome is unresolved (${observed}). Do NOT retry blindly: first confirm whether ${tag} was published and whether any rollout started. Client error: ${error.message}`,
     );
   }
   const digests = JSON.parse(
@@ -269,8 +292,19 @@ function rollout(fly, app, image) {
   }
 }
 
+// CALENDAR_DEPLOY_URL exists for automated tests; it may only point at a local
+// loopback fixture so a stray environment value cannot fake a public result.
+function verificationUrl(app) {
+  const override = process.env.CALENDAR_DEPLOY_URL;
+  if (!override) return `https://${app}.fly.dev`;
+  const host = new URL(override).hostname;
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(host))
+    throw new Error(`CALENDAR_DEPLOY_URL may only target loopback, got ${override}`);
+  return override;
+}
+
 async function verify(fly, app, image, sourceRevision) {
-  const url = process.env.CALENDAR_DEPLOY_URL ?? `https://${app}.fly.dev`;
+  const url = verificationUrl(app);
   const deadline = Date.now() + 150_000;
   let healthy = false;
   while (Date.now() < deadline && !healthy) {

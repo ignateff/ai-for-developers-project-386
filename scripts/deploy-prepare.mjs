@@ -100,7 +100,6 @@ try {
   state();
   if (realpathSync(git("rev-parse", "--show-toplevel")) !== realpathSync(process.cwd()))
     throw new Error("run from the checkout root");
-  git("worktree", "list", "--porcelain");
   git(
     "fetch",
     "--no-tags",
