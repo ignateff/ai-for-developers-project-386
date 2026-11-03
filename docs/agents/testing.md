@@ -2,6 +2,10 @@
 
 `mise run check` runs lint, formatting, types, Vitest, Playwright, contract and generated-artifact checks, build, and workflow lint. CI runs the same check after installing Chromium.
 
+The full check also runs `mise run test:docker-smoke`: Docker and its daemon are required, and an unavailable daemon is an error. It builds the current working-copy production inputs for `linux/amd64` (potentially slow under Apple Silicon emulation), then starts the normal image command on `PORT=8080` with an isolated in-memory database and an automatically assigned loopback port. Health, the page, JavaScript assets, browser errors and the exact production version message are checked. Only resources created by the run are removed; no deployment or booking is performed. The displayed revision is a random smoke marker, not a Git commit or a claim that a dirty checkout matches `HEAD`.
+
+The smoke's temporary build context contains working-copy build inputs from the root manifests, Dockerfile, `.dockerignore`, version file, `apps/api`, `apps/web` and `generated`; untracked, non-ignored source files in those directories are included. Other local files, hidden source files and files with common secret-related names are not copied. Docker applies the checkout's `.dockerignore` to that context. Keep secrets and local data outside source files: a filename filter cannot detect secrets embedded in source inputs, including modified files. This verification does not replace the stricter deploy gate or its immutable context.
+
 Local pre-commit and pre-push hooks run `mise run check:quick` (lint, formatting and types), without starting dev daemons. This is not a replacement for the full CI check; require a successful `check` status before merging. Run `mise run check` explicitly for full local validation.
 
 ## Development lifecycle tests
