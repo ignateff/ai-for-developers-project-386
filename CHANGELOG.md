@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.4.0...v0.4.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **test:** pin SDK boundary lint diagnostics to JSON ([d3040e6](https://github.com/ignateff/ai-for-developers-project-386/commit/d3040e6e11565f79a1e2c58ae3a2c7060e992789)), closes [#68](https://github.com/ignateff/ai-for-developers-project-386/issues/68)
+
 ## [0.4.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.3.1...v0.4.0) (2026-11-02)
 
 
