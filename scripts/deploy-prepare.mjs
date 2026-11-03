@@ -14,9 +14,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 // Do not inherit Git's repository/config overrides from a caller's shell.
-const env = Object.fromEntries(
-  Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
-);
+const env = {
+  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
+  GIT_NO_REPLACE_OBJECTS: "1",
+};
 const run = (program, args, options = {}) => execFileSync(program, args, { env, ...options });
 const git = (...args) => {
   try {
@@ -98,8 +99,17 @@ try {
   if (realpathSync(git("rev-parse", "--show-toplevel")) !== realpathSync(process.cwd()))
     throw new Error("run from the checkout root");
   git("worktree", "list", "--porcelain");
-  git("fetch", "origin");
-  git("merge", "--ff-only", "origin/main");
+  git(
+    "fetch",
+    "--no-tags",
+    "--no-prune",
+    "--no-recurse-submodules",
+    "--no-write-fetch-head",
+    "--refmap=",
+    "origin",
+    "refs/heads/main:refs/remotes/origin/main",
+  );
+  git("merge", "--ff-only", "--no-overwrite-ignore", "origin/main");
   state();
   const sourceRevision = revision();
 
