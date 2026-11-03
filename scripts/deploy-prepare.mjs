@@ -92,6 +92,23 @@ function freeze(path) {
   chmodSync(path, 0o500);
 }
 
+function contextContents(path) {
+  const entries = [];
+  function visit(directory, prefix = "") {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const name = `${prefix}${entry.name}`;
+      const target = join(directory, entry.name);
+      if (entry.isDirectory()) visit(target, `${name}/`);
+      else if (entry.isFile()) {
+        entries.push([name, createHash("sha256").update(readFileSync(target)).digest("hex")]);
+      } else throw new Error("build context changed: unexpected entry");
+    }
+  }
+  visit(path);
+  entries.sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(entries);
+}
+
 let context;
 try {
   if (process.argv.length !== 2) throw new Error("this preparation command accepts no arguments");
@@ -155,6 +172,7 @@ try {
     .update(manifest.join("\n") + "\n")
     .digest("hex");
   freeze(context);
+  const contextBeforeBuild = contextContents(context);
   state();
   if (revision() !== sourceRevision) throw new Error("source revision changed during preparation");
   const recordDir = mkdtempSync(join(tmpdir(), "calendar-deploy-provenance-"));
@@ -175,6 +193,8 @@ try {
     ],
     { stdio: "inherit" },
   );
+  if (contextContents(context) !== contextBeforeBuild)
+    throw new Error("build context changed during build");
   const localImageId = readFileSync(iidfile, "utf8").trim();
   if (!imageId.test(localImageId)) throw new Error("Docker did not provide a valid local image ID");
   const inspected = JSON.parse(

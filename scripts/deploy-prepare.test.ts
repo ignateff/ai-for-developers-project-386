@@ -92,6 +92,11 @@ if (args[0] === 'build') {
   const context = args.at(-1);
   const walk = (p, prefix = '') => fs.readdirSync(p, {withFileTypes:true}).flatMap(e => e.isDirectory() ? walk(path.join(p, e.name), prefix + e.name + '/') : [prefix + e.name]);
   fs.writeFileSync(path.join(dir, 'context.json'), JSON.stringify(walk(context).sort()));
+  if (config.changeContext) {
+    fs.chmodSync(context, 0o700);
+    fs.chmodSync(path.join(context, 'Dockerfile'), 0o600);
+    fs.writeFileSync(path.join(context, 'Dockerfile'), 'modified during build');
+  }
   fs.writeFileSync(args[args.indexOf('--iidfile') + 1], config.localImageId);
 } else console.log(JSON.stringify([{ Id: config.localImageId, Os: 'linux', Architecture: config.arch || 'amd64', Config: { Labels: { 'org.opencontainers.image.revision': config.label || config.revision } } }]));
 `,
@@ -186,6 +191,7 @@ it.each([
 
 it.each([
   [{ dockerFail: true }, "docker"],
+  [{ changeContext: true }, "context changed"],
   [{ arch: "arm64" }, "inspection"],
   [{ label: "wrong" }, "inspection"],
   [{ localImageId: "unknown" }, "valid local image ID"],
