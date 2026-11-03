@@ -123,8 +123,17 @@ it("builds only an allowlisted Git snapshot and records the inspected image prov
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
     const calls = f.log("git");
-    expect(calls).toContainEqual(["fetch", "origin"]);
-    expect(calls).toContainEqual(["merge", "--ff-only", "origin/main"]);
+    expect(calls).toContainEqual([
+      "fetch",
+      "--no-tags",
+      "--no-prune",
+      "--no-recurse-submodules",
+      "--no-write-fetch-head",
+      "--refmap=",
+      "origin",
+      "refs/heads/main:refs/remotes/origin/main",
+    ]);
+    expect(calls).toContainEqual(["merge", "--ff-only", "--no-overwrite-ignore", "origin/main"]);
     expect(
       calls.some((args: string[]) => ["switch", "reset", "stash", "clean"].includes(args[0])),
     ).toBe(false);
