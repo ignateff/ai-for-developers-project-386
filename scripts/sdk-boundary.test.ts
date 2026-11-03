@@ -16,7 +16,8 @@ function fixture(path: string, source: string) {
 }
 
 function lint(...files: string[]) {
-  return spawnSync(process.execPath, [oxlint, "--deny-warnings", ...files], {
+  // GitHub's reporter omits diagnostic help, including the SDK guidance checked below.
+  return spawnSync(process.execPath, [oxlint, "--format", "json", "--deny-warnings", ...files], {
     cwd: directory,
     encoding: "utf8",
   });
@@ -32,6 +33,20 @@ afterEach(() => {
 });
 
 describe("frontend SDK boundary", () => {
+  it("pins JSON diagnostics so CI does not omit the custom SDK guidance", () => {
+    const file = fixture("apps/web/src/client.ts", "import 'axios';");
+    const result = lint(file);
+
+    expect(result.status, result.stdout + result.stderr).toBe(1);
+    const { diagnostics } = JSON.parse(result.stdout);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({
+      code: "eslint(no-restricted-imports)",
+      filename: file,
+    });
+    expect(JSON.stringify(diagnostics[0])).toContain("Use the generated SDK");
+  });
+
   it("rejects direct and global-object network primitives throughout production frontend", () => {
     const sources = [
       ...["", "window.", "globalThis.", "self."].flatMap((prefix) => [
