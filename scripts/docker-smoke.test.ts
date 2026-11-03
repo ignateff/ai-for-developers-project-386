@@ -63,6 +63,7 @@ if (args[0] === 'create') {
 }
 if ((args[0] === 'image' && args[1] === 'inspect') || (args[0] === 'container' && args[1] === 'inspect')) {
   const current = JSON.parse(fs.readFileSync(process.env.FAKE_STATE, 'utf8'));
+  if (current.inspectFails) { process.stderr.write('Cannot connect to Docker daemon'); process.exit(7); }
   const exists = args[0] === 'image' ? current.image : current.container;
   if (!exists) process.exit(1);
   const owner = scenario === 'foreign' ? 'someone-else' : current.owner;
@@ -218,6 +219,35 @@ it("records unresolved late resources and the recover command removes only owned
   }
 });
 
+it("preserves an absent resource for recovery after the daemon completes late", () => {
+  const { run, state, recoveryDir, cleanup } = harness("uncertain-build");
+  try {
+    const runId = "a".repeat(24);
+    const container = `calendar-smoke-${runId}`;
+    mkdirSync(recoveryDir);
+    const path = join(recoveryDir, `${runId}.json`);
+    const saved = JSON.stringify({
+      runId,
+      owner: runId,
+      label: "calendar.smoke.owner",
+      resources: [{ kind: "container", name: container }],
+    });
+    writeFileSync(path, saved);
+    const early = run(["recover", path]);
+    expect(early.status).not.toBe(0);
+    expect(early.stderr).toContain("unresolved");
+    expect(readFileSync(path, "utf8")).toBe(saved);
+    // The daemon finishes only after the first recovery attempt has returned.
+    writeFileSync(state, JSON.stringify({ owner: runId, container }));
+    const recovered = run(["recover", path]);
+    expect(recovered.status, recovered.stderr).toBe(0);
+    expect(existsSync(path)).toBe(false);
+    expect(JSON.parse(readFileSync(state, "utf8"))).not.toHaveProperty("container");
+  } finally {
+    cleanup();
+  }
+});
+
 it("rejects an invalid recovery record without touching resources", () => {
   const { run, calls, recoveryDir, cleanup } = harness("uncertain-build");
   try {
@@ -228,6 +258,64 @@ it("rejects an invalid recovery record without touching resources", () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("Invalid smoke recovery record");
     expect(calls().some((args) => args[0] === "rm")).toBe(false);
+  } finally {
+    cleanup();
+  }
+});
+
+it("retains the recovery record while the Docker daemon is unavailable", () => {
+  const { run, calls, state, recoveryDir, cleanup } = harness("uncertain-build");
+  try {
+    const runId = "a".repeat(24);
+    mkdirSync(recoveryDir);
+    const path = join(recoveryDir, `${runId}.json`);
+    const saved = JSON.stringify({
+      runId,
+      owner: runId,
+      label: "calendar.smoke.owner",
+      resources: [{ kind: "container", name: `calendar-smoke-${runId}` }],
+    });
+    writeFileSync(path, saved);
+    writeFileSync(state, JSON.stringify({ inspectFails: true }));
+    const result = run(["recover", path]);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("unresolved");
+    expect(readFileSync(path, "utf8")).toBe(saved);
+    expect(calls().some((args) => args[0] === "rm")).toBe(false);
+  } finally {
+    cleanup();
+  }
+});
+
+it("remembers confirmed cleanup when another recorded resource is still unresolved", () => {
+  const { run, state, recoveryDir, cleanup } = harness("uncertain-build");
+  try {
+    const runId = "a".repeat(24);
+    const container = `calendar-smoke-${runId}`;
+    mkdirSync(recoveryDir);
+    const path = join(recoveryDir, `${runId}.json`);
+    writeFileSync(
+      path,
+      JSON.stringify({
+        runId,
+        owner: runId,
+        label: "calendar.smoke.owner",
+        resources: [
+          { kind: "image", name: `calendar-smoke:${runId}` },
+          { kind: "container", name: container },
+        ],
+      }),
+    );
+    writeFileSync(state, JSON.stringify({ owner: runId, image: `calendar-smoke:${runId}` }));
+    const partial = run(["recover", path]);
+    expect(partial.status).not.toBe(0);
+    expect(JSON.parse(readFileSync(path, "utf8")).resources).toEqual([
+      { kind: "container", name: container },
+    ]);
+    writeFileSync(state, JSON.stringify({ owner: runId, container }));
+    const recovered = run(["recover", path]);
+    expect(recovered.status, recovered.stderr).toBe(0);
+    expect(existsSync(path)).toBe(false);
   } finally {
     cleanup();
   }

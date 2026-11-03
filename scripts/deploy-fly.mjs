@@ -29,9 +29,12 @@ const lockPath = join(
   tmpdir(),
   `calendar-deploy-${createHash("sha256").update(root).digest("hex").slice(0, 16)}.lock`,
 );
+const lockOwner = `${process.pid}:${runId}\n`;
+let lockAcquired = false;
 function acquireLock() {
   try {
-    writeFileSync(lockPath, `${process.pid}\n`, { flag: "wx" });
+    writeFileSync(lockPath, lockOwner, { flag: "wx" });
+    lockAcquired = true;
   } catch {
     throw new Error(
       `another deployment is running or a stale lock exists: ${lockPath}. This lock is local to this machine; verify the other run finished before removing it.`,
@@ -39,7 +42,7 @@ function acquireLock() {
   }
 }
 function releaseLock() {
-  rmSync(lockPath, { force: true });
+  if (lockAcquired && readFileSync(lockPath, "utf8") === lockOwner) rmSync(lockPath);
 }
 
 function findFly() {
@@ -303,6 +306,38 @@ function verificationUrl(app) {
   return override;
 }
 
+function healthChecksConfirmed(machine) {
+  const checks = machine.checks;
+  if (
+    !Array.isArray(checks) ||
+    !checks.length ||
+    checks.some(
+      (check) => typeof check?.name !== "string" || !check.name || check.status !== "passing",
+    )
+  )
+    return false;
+  const services = machine.config?.services;
+  if (!Array.isArray(services)) return false;
+  const healthServices = services.filter(
+    (service) =>
+      Array.isArray(service?.checks) &&
+      service.checks.some((check) => check?.type === "http" && check.path === "/api/health"),
+  );
+  // Fly names service HTTP checks servicecheck-<index>-http-<port>. Require
+  // the configured health service, not just any unrelated passing check.
+  return (
+    healthServices.length > 0 &&
+    healthServices.every((service) => {
+      if (!Number.isSafeInteger(service.internal_port) || service.internal_port <= 0) return false;
+      const name = new RegExp(`^servicecheck-\\d+-http-${service.internal_port}$`);
+      const reported = new Set(
+        checks.filter((check) => name.test(check.name)).map((check) => check.name),
+      );
+      return reported.size >= service.checks.filter((check) => check?.type === "http").length;
+    })
+  );
+}
+
 async function verify(fly, app, image, sourceRevision) {
   const url = verificationUrl(app);
   const deadline = Date.now() + 150_000;
@@ -319,19 +354,65 @@ async function verify(fly, app, image, sourceRevision) {
   }
   if (!healthy) throw new Error(`public health check did not pass at ${url}`);
   const list = machines(fly, app);
+  if (!Array.isArray(list) || !list.length || list.some((machine) => !machine?.id))
+    throw new Error("empty or invalid machine listing; deployment remains unverified");
+  const unsettled = list.filter((machine) => {
+    if (machine.state === "started") return false;
+    // A stopped machine is acceptable only with an explicit auto-stop/start
+    // policy. A crash or an unknown state must not be mistaken for autostop.
+    const services = machine.config?.services;
+    return !(
+      machine.state === "stopped" &&
+      Array.isArray(services) &&
+      services.length &&
+      services.every(
+        (service) => [true, "stop"].includes(service.autostop) && service.autostart === true,
+      )
+    );
+  });
+  if (unsettled.length)
+    throw new Error(
+      `unconfirmed machine state: ${unsettled.map((m) => `${m.id}:${m.state}`).join(", ")}`,
+    );
   const mismatched = list.filter((machine) => machine.image_ref?.digest !== image.split("@")[1]);
   if (mismatched.length)
     throw new Error(
       `machines run an unexpected image: ${mismatched.map((m) => `${m.id}:${m.image_ref?.digest}`).join(", ")}`,
     );
   const failing = list.filter(
-    (machine) =>
-      machine.state === "started" &&
-      Array.isArray(machine.checks) &&
-      machine.checks.some((check) => check.status !== "passing"),
+    (machine) => machine.state === "started" && !healthChecksConfirmed(machine),
   );
   if (failing.length)
-    throw new Error(`started machines have failing checks: ${failing.map((m) => m.id).join(", ")}`);
+    throw new Error(
+      `started machines have unconfirmed health checks: ${failing.map((m) => m.id).join(", ")}`,
+    );
+  // fly releases --json emits fly-go Release fields (ID, Version, Status,
+  // InProgress, ImageRef). Never accept a matching historical release while a
+  // newer release is failed, pending or points to another image.
+  const releases = JSON.parse(run(fly, ["releases", "--app", app, "--json"], { encoding: "utf8" }));
+  if (
+    !Array.isArray(releases) ||
+    !releases.length ||
+    releases.some((release) => !Number.isSafeInteger(release?.Version) || release.Version <= 0)
+  )
+    throw new Error("empty or invalid release listing; deployment remains unverified");
+  const latest = [...releases].sort((a, b) => b.Version - a.Version)[0];
+  if (
+    typeof latest.ID !== "string" ||
+    !latest.ID ||
+    latest.Status !== "complete" ||
+    latest.InProgress !== false ||
+    latest.ImageRef !== image
+  )
+    throw new Error("latest release does not confirm the published image and completed rollout");
+  if (
+    list.some(
+      (machine) =>
+        machine.config?.metadata?.fly_release_id !== latest.ID ||
+        machine.config?.metadata?.fly_release_version !== String(latest.Version),
+    )
+  )
+    throw new Error("machines do not match the confirmed release");
   const version = readFileSync(join(root, "version.txt"), "utf8").trim();
   const expected = `Calendar v${version} (${sourceRevision.slice(0, 7)})`;
   const { chromium } = await import("@playwright/test");
@@ -356,24 +437,27 @@ async function verify(fly, app, image, sourceRevision) {
     await browser.close();
   }
   console.error(`Deployment verified: ${url} serves ${expected}`);
+  return { releaseId: latest.ID, releaseVersion: latest.Version };
 }
 
 async function main() {
   acquireLock();
   const fly = findFly();
+  const configurationRevision = gate();
   const app = appName();
-  gate();
   const { path, record } = prepare();
+  if (record.sourceRevision !== configurationRevision)
+    throw new Error("configuration revision changed during preparation; start a new deployment");
   await smokeImage(record);
   gate(record.sourceRevision);
   ensureSettled(machines(fly, app));
   const image = publish(fly, app, record);
   gate(record.sourceRevision);
   rollout(fly, app, image);
-  await verify(fly, app, image, record.sourceRevision);
+  const release = await verify(fly, app, image, record.sourceRevision);
   writeFileSync(
     path,
-    `${JSON.stringify({ ...record, registryDigest: image.split("@")[1], deployedImage: image, deployedAt: new Date().toISOString() }, null, 2)}\n`,
+    `${JSON.stringify({ ...record, ...release, registryDigest: image.split("@")[1], deployedImage: image, deployedAt: new Date().toISOString() }, null, 2)}\n`,
     { mode: 0o600 },
   );
   console.log(`Deployed ${image} (source ${record.sourceRevision}); provenance: ${path}`);

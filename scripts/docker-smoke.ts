@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   rmSync,
   unlinkSync,
   writeFileSync,
@@ -319,7 +320,6 @@ function readRecoveryRecord(path: string): {
     candidate.owner !== candidate.runId ||
     candidate.label !== ownerLabel ||
     !Array.isArray(candidate.resources) ||
-    !candidate.resources.length ||
     !candidate.resources.every(validResource) ||
     !candidate.resources.every(
       (resource) =>
@@ -365,13 +365,17 @@ async function reconcile(): Promise<Resource[]> {
 
 async function recover(path: string): Promise<void> {
   const record = readRecoveryRecord(path);
+  let remaining = [...record.resources];
   const leftover: Resource[] = [];
   for (const resource of record.resources) {
     let inspected: unknown;
     try {
       inspected = await inspectResource(resource);
     } catch {
-      console.error(`Docker ${resource.kind} ${resource.name}: not present`);
+      leftover.push(resource);
+      console.error(
+        `Docker ${resource.kind} ${resource.name}: unresolved; inspection failed or the daemon may still create it`,
+      );
       continue;
     }
     const details = inspected as { Id?: unknown; Config?: { Labels?: Record<string, unknown> } };
@@ -390,11 +394,26 @@ async function recover(path: string): Promise<void> {
       resource.kind === "container" ? ["rm", "-f", details.Id] : ["image", "rm", details.Id],
       30_000,
     );
+    remaining = remaining.filter((item) => item !== resource);
+    // Persist confirmed progress atomically before trying another resource.
+    // An empty resource list means every recorded removal was acknowledged;
+    // a later recovery can finish unlinking if this process is interrupted.
+    const progressPath = `${path}.${id}.tmp`;
+    try {
+      writeFileSync(
+        progressPath,
+        `${JSON.stringify({ ...record, resources: remaining }, null, 2)}\n`,
+        { mode: 0o600, flag: "wx" },
+      );
+      renameSync(progressPath, path);
+    } finally {
+      rmSync(progressPath, { force: true });
+    }
     console.error(`Docker ${resource.kind} ${resource.name}: removed after late completion`);
   }
   if (leftover.length) {
     throw new Error(
-      `Some recorded resources remain unverified: ${leftover.map((item) => item.name).join(", ")}`,
+      `Recovery unresolved; some recorded resources remain unverified: ${leftover.map((item) => item.name).join(", ")}`,
     );
   }
   unlinkSync(path);

@@ -23,6 +23,17 @@ const repo = fileURLToPath(new URL("../", import.meta.url));
 const revision = "a".repeat(40);
 const localImageId = `sha256:${"b".repeat(64)}`;
 const digest = `sha256:${"c".repeat(64)}`;
+const machineConfig = {
+  metadata: { fly_release_id: "release-1", fly_release_version: "1" },
+  services: [
+    {
+      internal_port: 3000,
+      autostop: "stop",
+      autostart: true,
+      checks: [{ type: "http", path: "/api/health" }],
+    },
+  ],
+};
 
 const fakeGit = `#!${process.execPath}
 const fs = require('fs');
@@ -36,6 +47,7 @@ const calls = fs.readFileSync(path.join(dir, 'git.log'), 'utf8').trim().split('\
 if (config.fail === command) process.exit(7);
 if (command === 'branch') console.log(config.branch || 'main');
 else if (command === 'status') console.log(config.dirty || '');
+else if (command === 'merge' && config.mergeApp) fs.writeFileSync(path.join(dir, 'fly.toml'), "app = '" + config.mergeApp + "'\\n");
 else if (command === 'rev-parse' && args[1] === '--show-toplevel') console.log(dir);
 else if (command === 'rev-parse') {
   const sequence = config.refSequence;
@@ -102,7 +114,13 @@ const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, '
 if (args[0] === 'auth') process.exit(0);
 if (args[0] === 'machines') {
   if (config.machinesBusy) { console.log(JSON.stringify([{ id: 'm1', state: 'updating', image_ref: { digest: 'sha256:' + '0'.repeat(64) }, checks: [] }])); process.exit(0); }
-  console.log(JSON.stringify([{ id: 'm1', state: 'started', image_ref: { digest: state.deployed || '${digest}' }, checks: [{ status: 'passing' }] }]));
+  console.log(JSON.stringify(state.deployed && config.postDeployMachines !== undefined ? config.postDeployMachines : [{ id: 'm1', state: 'started', image_ref: { digest: state.deployed || '${digest}' }, config: ${JSON.stringify(machineConfig)}, checks: [{ name: 'servicecheck-00-http-3000', status: 'passing' }] }]));
+  process.exit(0);
+}
+if (args[0] === 'releases') {
+  if (config.releaseReadFails) process.exit(7);
+  const app = args[args.indexOf('--app') + 1];
+  console.log(JSON.stringify(config.releases ?? [{ ID: 'release-1', Version: 1, Status: 'complete', InProgress: false, ImageRef: 'registry.fly.io/' + app + '@${digest}' }]));
   process.exit(0);
 }
 if (args[0] === 'deploy') {
@@ -218,6 +236,11 @@ it("refuses to run while another local deployment holds the lock", async () => {
     const result = await f.run(port);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("another deployment is running");
+    expect(readFileSync(lock, "utf8")).toBe("999999\n");
+    const next = await f.run(port);
+    expect(next.status).not.toBe(0);
+    expect(next.stderr).toContain("another deployment is running");
+    expect(readFileSync(lock, "utf8")).toBe("999999\n");
     expect(f.log("git")).toEqual([]);
   } finally {
     f.cleanup();
@@ -257,6 +280,23 @@ it("reports an unresolved push after inspecting the registry manifest", async ()
   }
 });
 
+it("publishes and rolls out to the app selected by the fast-forwarded configuration", async () => {
+  const f = fixture({ mergeApp: "calendar-updated-app" });
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status, result.stderr).toBe(0);
+    expect(f.log("docker").find((args) => args[0] === "push")?.[1]).toMatch(
+      /^registry\.fly\.io\/calendar-updated-app:/,
+    );
+    const deploy = f.log("fly").find((args) => args[0] === "deploy");
+    expect(deploy?.[deploy.indexOf("--app") + 1]).toBe("calendar-updated-app");
+    expect(deploy).toContain(`registry.fly.io/calendar-updated-app@${digest}`);
+  } finally {
+    f.cleanup();
+  }
+});
+
 it("stops without pushing when the source revision advanced after preparation", async () => {
   const f = fixture({
     refSequence: [
@@ -272,6 +312,30 @@ it("stops without pushing when the source revision advanced after preparation", 
     const result = await f.run(port);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("source revision advanced");
+    expect(f.log("docker").some((args) => args[0] === "push")).toBe(false);
+    expect(f.log("fly").some((args) => args[0] === "deploy")).toBe(false);
+  } finally {
+    f.cleanup();
+  }
+});
+
+it("stops without publishing if preparation advances the configuration revision", async () => {
+  const advanced = "d".repeat(40);
+  const f = fixture(
+    {
+      revision: advanced,
+      refSequence: [
+        [revision, revision, revision],
+        [advanced, advanced, advanced],
+      ],
+    },
+    "console.info('Calendar v0.0.0 (ddddddd)');",
+  );
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("configuration revision changed during preparation");
     expect(f.log("docker").some((args) => args[0] === "push")).toBe(false);
     expect(f.log("fly").some((args) => args[0] === "deploy")).toBe(false);
   } finally {
@@ -335,6 +399,226 @@ it("fails verification when the deployed frontend reports another revision", asy
   }
 });
 
+it.each([
+  { label: "missing", checks: undefined },
+  { label: "empty", checks: [] },
+  { label: "failing", checks: [{ name: "health", status: "critical" }] },
+])(
+  "does not verify a started machine with unconfirmed health checks ($label)",
+  async ({ checks }) => {
+    const f = fixture({
+      postDeployMachines: [{ id: "m1", state: "started", image_ref: { digest }, checks }],
+    });
+    try {
+      const port = await f.start();
+      const result = await f.run(port);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("unconfirmed health checks");
+      expect(result.stderr).not.toContain("Deployment verified:");
+    } finally {
+      f.cleanup();
+    }
+  },
+);
+
+it.each(["starting", "failed", "created", "stopped"])(
+  "does not verify an unconfirmed %s machine even when another machine is healthy",
+  async (state) => {
+    const f = fixture({
+      postDeployMachines: [
+        {
+          id: "healthy",
+          state: "started",
+          image_ref: { digest },
+          checks: [{ name: "health", status: "passing" }],
+        },
+        { id: "unconfirmed", state, image_ref: { digest } },
+      ],
+    });
+    try {
+      const port = await f.start();
+      const result = await f.run(port);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("unconfirmed machine state");
+      expect(result.stderr).not.toContain("Deployment verified:");
+    } finally {
+      f.cleanup();
+    }
+  },
+);
+
+it("does not verify an empty deployment machine listing", async () => {
+  const f = fixture({ postDeployMachines: [] });
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("empty or invalid machine listing");
+    expect(result.stderr).not.toContain("Deployment verified:");
+  } finally {
+    f.cleanup();
+  }
+});
+
+it.each([
+  { label: "absent", releases: [] },
+  {
+    label: "missing image",
+    releases: [{ ID: "release-1", Version: 1, Status: "complete", InProgress: false }],
+  },
+  {
+    label: "wrong digest",
+    releases: [
+      {
+        ID: "release-1",
+        Version: 1,
+        Status: "complete",
+        InProgress: false,
+        ImageRef: `registry.fly.io/calendar-test-app@sha256:${"d".repeat(64)}`,
+      },
+    ],
+  },
+  {
+    label: "wrong app",
+    releases: [
+      {
+        ID: "release-1",
+        Version: 1,
+        Status: "complete",
+        InProgress: false,
+        ImageRef: `registry.fly.io/other@${digest}`,
+      },
+    ],
+  },
+  {
+    label: "failed",
+    releases: [
+      {
+        ID: "release-1",
+        Version: 1,
+        Status: "failed",
+        InProgress: false,
+        ImageRef: `registry.fly.io/calendar-test-app@${digest}`,
+      },
+    ],
+  },
+  {
+    label: "pending",
+    releases: [
+      {
+        ID: "release-1",
+        Version: 1,
+        Status: "complete",
+        InProgress: true,
+        ImageRef: `registry.fly.io/calendar-test-app@${digest}`,
+      },
+    ],
+  },
+  {
+    label: "superseded",
+    releases: [
+      {
+        ID: "release-1",
+        Version: 1,
+        Status: "complete",
+        InProgress: false,
+        ImageRef: `registry.fly.io/calendar-test-app@${digest}`,
+      },
+      {
+        ID: "release-2",
+        Version: 2,
+        Status: "failed",
+        InProgress: false,
+        ImageRef: `registry.fly.io/calendar-test-app@${digest}`,
+      },
+    ],
+  },
+  { label: "unreadable", releaseReadFails: true },
+])("does not verify an unconfirmed release ($label)", async (config) => {
+  const f = fixture(config);
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("release");
+    expect(result.stderr).not.toContain("Deployment verified:");
+  } finally {
+    f.cleanup();
+  }
+});
+
+it.each([undefined, { fly_release_id: "older-release", fly_release_version: "1" }])(
+  "does not verify a machine without the confirmed release identity (%j)",
+  async (metadata) => {
+    const f = fixture({
+      postDeployMachines: [
+        {
+          id: "m1",
+          state: "started",
+          image_ref: { digest },
+          config: { ...machineConfig, metadata },
+          checks: [{ name: "servicecheck-00-http-3000", status: "passing" }],
+        },
+      ],
+    });
+    try {
+      const port = await f.start();
+      const result = await f.run(port);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("machines do not match the confirmed release");
+      expect(result.stderr).not.toContain("Deployment verified:");
+    } finally {
+      f.cleanup();
+    }
+  },
+);
+
+it("does not substitute an unrelated passing check for the configured HTTP health check", async () => {
+  const f = fixture({
+    postDeployMachines: [
+      {
+        id: "m1",
+        state: "started",
+        image_ref: { digest },
+        config: machineConfig,
+        checks: [{ name: "tcp-alive", status: "passing" }],
+      },
+    ],
+  });
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("unconfirmed health checks");
+    expect(result.stderr).not.toContain("Deployment verified:");
+  } finally {
+    f.cleanup();
+  }
+});
+
+it("accepts an explicitly autostopped machine alongside a verified started machine", async () => {
+  const f = fixture({
+    postDeployMachines: [
+      {
+        id: "started",
+        state: "started",
+        image_ref: { digest },
+        config: machineConfig,
+        checks: [{ name: "servicecheck-00-http-3000", status: "passing" }],
+      },
+      { id: "autostopped", state: "stopped", image_ref: { digest }, config: machineConfig },
+    ],
+  });
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toContain("Deployment verified:");
+  } finally {
+    f.cleanup();
+  }
+});
+
 it("publishes the verified image by digest and confirms the public frontend version", async () => {
   const f = fixture();
   try {
@@ -359,7 +643,10 @@ it("publishes the verified image by digest and confirms the public frontend vers
       sourceRevision: revision,
       localImageId,
       registryDigest: digest,
+      releaseId: "release-1",
+      releaseVersion: 1,
     });
+    expect(readdirSync(f.dir).some((name) => name.endsWith(".lock"))).toBe(false);
     expect(result.stdout).toContain("Deployed registry.fly.io/");
     expect(result.stderr).toContain(`Deployment verified: http://127.0.0.1:${port}`);
   } finally {
