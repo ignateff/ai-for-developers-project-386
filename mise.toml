@@ -98,6 +98,10 @@ run = "pnpm run build:docker"
 description = "Prepare a verified local deployment image (does not publish)"
 run = "pnpm run deploy:prepare"
 
+[tasks."deploy:fly"]
+description = "Deploy the verified image to Fly.io (explicit run; local lock only)"
+run = "pnpm run deploy:fly"
+
 [tasks.start]
 description = "Run the built API server (serves the built frontend when present)"
 run = "pnpm --filter @calendar/api start"
