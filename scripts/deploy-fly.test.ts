@@ -596,7 +596,53 @@ it("does not substitute an unrelated passing check for the configured HTTP healt
   }
 });
 
-it("accepts an explicitly autostopped machine alongside a verified started machine", async () => {
+it.each([
+  { reason: "missing events", events: undefined },
+  {
+    reason: "OOM after exhausted restarts",
+    events: [
+      {
+        type: "exit",
+        status: "stopped",
+        source: "flyd",
+        timestamp: 1793725200000,
+        request: {
+          exit_event: {
+            exit_code: 137,
+            oom_killed: true,
+            requested_stop: false,
+            restarting: false,
+          },
+          restart_count: 10,
+        },
+      },
+    ],
+  },
+  {
+    reason: "application exit",
+    events: [
+      {
+        type: "exit",
+        status: "stopped",
+        source: "flyd",
+        timestamp: 1793725200000,
+        request: { exit_event: { exit_code: 0, requested_stop: false } },
+      },
+    ],
+  },
+  {
+    reason: "requested stop with an unknown origin",
+    events: [
+      {
+        type: "exit",
+        status: "stopped",
+        source: "flyd",
+        timestamp: 1793725200000,
+        request: { exit_event: { exit_code: 0, requested_stop: true } },
+      },
+    ],
+  },
+])("does not infer a confirmed autostop from policy alone ($reason)", async ({ events }) => {
   const f = fixture({
     postDeployMachines: [
       {
@@ -606,14 +652,15 @@ it("accepts an explicitly autostopped machine alongside a verified started machi
         config: machineConfig,
         checks: [{ name: "servicecheck-00-http-3000", status: "passing" }],
       },
-      { id: "autostopped", state: "stopped", image_ref: { digest }, config: machineConfig },
+      { id: "stopped", state: "stopped", image_ref: { digest }, config: machineConfig, events },
     ],
   });
   try {
     const port = await f.start();
     const result = await f.run(port);
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.stderr).toContain("Deployment verified:");
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("unconfirmed machine state: stopped:stopped");
+    expect(result.stderr).not.toContain("Deployment verified:");
   } finally {
     f.cleanup();
   }

@@ -356,23 +356,15 @@ async function verify(fly, app, image, sourceRevision) {
   const list = machines(fly, app);
   if (!Array.isArray(list) || !list.length || list.some((machine) => !machine?.id))
     throw new Error("empty or invalid machine listing; deployment remains unverified");
-  const unsettled = list.filter((machine) => {
-    if (machine.state === "started") return false;
-    // A stopped machine is acceptable only with an explicit auto-stop/start
-    // policy. A crash or an unknown state must not be mistaken for autostop.
-    const services = machine.config?.services;
-    return !(
-      machine.state === "stopped" &&
-      Array.isArray(services) &&
-      services.length &&
-      services.every(
-        (service) => [true, "stop"].includes(service.autostop) && service.autostart === true,
-      )
-    );
-  });
+  // The public Machine schema does not provide an unambiguous autostop reason.
+  // Enabled autostop or requested_stop=true cannot distinguish an idle shutdown
+  // from a crash, manual stop or another platform action. Fail closed rather
+  // than inventing event-source values or starting/restarting Machines here.
+  const unsettled = list.filter((machine) => machine.state !== "started");
   if (unsettled.length)
     throw new Error(
-      `unconfirmed machine state: ${unsettled.map((m) => `${m.id}:${m.state}`).join(", ")}`,
+      `unconfirmed machine state: ${unsettled.map((m) => `${m.id}:${m.state}`).join(", ")}. ` +
+        "Stopped Machines cannot be confirmed as autostop from policy alone; inspect their state before any further deployment. No automatic start or restart was attempted.",
     );
   const mismatched = list.filter((machine) => machine.image_ref?.digest !== image.split("@")[1]);
   if (mismatched.length)

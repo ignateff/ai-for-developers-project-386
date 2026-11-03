@@ -16,6 +16,10 @@ Containers and images have unique run-specific names and ownership labels. Clean
 
 Local pre-commit and pre-push hooks run `mise run check:quick` (lint, formatting and types), without starting dev daemons. This is not a replacement for the full CI check; require a successful `check` status before merging. Run `mise run check` explicitly for full local validation.
 
+## Deployment verification
+
+`mise run test -- scripts/deploy-fly.test.ts` exercises the deployment CLI through substitute Git/Fly/Docker executables and a local HTTP/browser fixture, without production credentials. The verification currently accepts only Machines observed as `started`, with confirmed checks, digest and release identity. It cannot establish an unambiguous autostop cause from the [public Machine/event schema](https://github.com/superfly/fly-go/blob/7b20a9b258873893c273712f4dc8fcf627c95878/machine_types.go): configured autostop and a requested stop do not prove why the Machine stopped. Thus even a genuinely idle `stopped` Machine fails verification and needs separate investigation; no automatic start, restart or deployment retry is added. This conservative limitation is preferable to reporting a crash or unknown stop as successful deployment. See [Fly Proxy autostop/autostart](https://fly.io/docs/reference/fly-proxy-autostop-autostart/) for the distinction between configuration and observed state.
+
 ## Development lifecycle tests
 
 `mise run test -- scripts/dev.test.ts` checks real `mise run dev` behavior in temporary checkouts. The suite uses its own Pitchfork supervisor, registry, logs and mise state, shared between its checkouts to exercise independent routing and shutdown. It leaves user daemon state unchanged. A short temporary directory under the home directory keeps the Unix socket within macOS path limits. TCP ports remain shared with the host and use the application's port allocation.
