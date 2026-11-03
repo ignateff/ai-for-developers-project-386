@@ -80,6 +80,10 @@ else if (args[0] === 'container' && args[1] === 'inspect') {
 }
 else if (args[0] === 'rm') { fs.appendFileSync(path.join(dir, 'docker.log'), '"removed"\\n'); }
 else if (args[0] === 'tag') {}
+else if (args[0] === 'manifest') {
+  if (config.manifestExists) console.log('{"schemaVersion":2}');
+  else process.exit(1);
+}
 else if (args[0] === 'push') {
   if (config.pushFails) process.exit(9);
 }
@@ -215,6 +219,39 @@ it("refuses to run while another local deployment holds the lock", async () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("another deployment is running");
     expect(f.log("git")).toEqual([]);
+  } finally {
+    f.cleanup();
+  }
+});
+
+it.each([
+  [{ branch: "feature/x" }, "must already be on main"],
+  [{ dirty: "?? untracked" }, "dirty or has untracked"],
+])("refuses a %s checkout before fetching or merging", async (config, message) => {
+  const f = fixture(config);
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(message);
+    const calls = f.log("git");
+    expect(calls.some((args) => args[0] === "fetch" || args[0] === "merge")).toBe(false);
+    expect(f.log("docker").some((args) => args[0] === "push")).toBe(false);
+  } finally {
+    f.cleanup();
+  }
+});
+
+it("reports an unresolved push after inspecting the registry manifest", async () => {
+  const f = fixture({ pushFails: true, manifestExists: true });
+  try {
+    const port = await f.start();
+    const result = await f.run(port);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("registry push outcome is unresolved");
+    expect(result.stderr).toContain("manifest exists");
+    expect(result.stderr).toContain("Do NOT retry blindly");
+    expect(f.log("fly").some((args) => args[0] === "deploy")).toBe(false);
   } finally {
     f.cleanup();
   }
