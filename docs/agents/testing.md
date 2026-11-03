@@ -22,6 +22,10 @@ Integration tests use SQLite and controlled clocks and failures where the behavi
 
 `apps/web` uses Vitest, jsdom and Testing Library for user-visible states and interactions. Tests requiring Mantine's `matchMedia` stub provide one in setup. `e2e/` uses Playwright and Chromium for the main booking, recovery, management and event-list flows.
 
+Frontend API requests must use the generated SDK. `.oxlintrc.json` applies a network-boundary rule to all production JavaScript/TypeScript in `apps/web/src`: no direct `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` (including access through `window`, `globalThis` and `self`), `sendBeacon`, or imports of the listed alternative HTTP clients. It is part of the existing `mise run lint`, `check:quick` and `check` commands, independently of generated-artifact freshness and real HTTP contract tests. Frontend `*.test.*` / `*.spec.*` files remain linted but are exempt from this restriction; server code and the generated SDK are outside its scope.
+
+`scripts/sdk-boundary.test.ts` checks the actual Oxlint configuration against allowed and rejected fixtures, without enumerating individual API operations. This is a syntactic architecture guardrail, not proof that every SDK operation executes or protection against every deliberate bypass: dynamically computed access, indirect aliases/helpers and unlisted networking dependencies may escape it. New legitimate frontend network access outside the API requires an explicit boundary/configuration decision, not an inline lint suppression.
+
 Playwright starts a dedicated in-memory API and web server and runs test files with one worker because they share that database. For concurrent worktrees, give each run a distinct pair of free ports, for example:
 
 ```sh
