@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -90,13 +91,24 @@ fs.appendFileSync(path.join(dir, 'docker.log'), JSON.stringify(args) + '\\n');
 if (config.dockerFail) process.exit(8);
 if (args[0] === 'build') {
   const context = args.at(-1);
-  const walk = (p, prefix = '') => fs.readdirSync(p, {withFileTypes:true}).flatMap(e => e.isDirectory() ? walk(path.join(p, e.name), prefix + e.name + '/') : [prefix + e.name]);
-  fs.writeFileSync(path.join(dir, 'context.json'), JSON.stringify(walk(context).sort()));
+  if (context !== '-') process.exit(12);
   if (config.changeContext) {
-    fs.chmodSync(context, 0o700);
-    fs.chmodSync(path.join(context, 'Dockerfile'), 0o600);
-    fs.writeFileSync(path.join(context, 'Dockerfile'), 'modified during build');
+    const local = path.join(dir, 'Dockerfile');
+    fs.writeFileSync(local, 'transient replacement');
+    fs.unlinkSync(local);
   }
+  const tar = fs.readFileSync(0);
+  fs.writeFileSync(path.join(dir, 'snapshot.tar'), tar);
+  const files = {};
+  for (let p = 0; p + 512 <= tar.length;) {
+    const name = tar.subarray(p, p + 100).toString().replace(/\0.*$/, '');
+    if (!name) break;
+    const size = parseInt(tar.subarray(p + 124, p + 136).toString().replace(/\0.*$/, '').trim(), 8) || 0;
+    files[name] = tar.subarray(p + 512, p + 512 + size).toString();
+    p += 512 + Math.ceil(size / 512) * 512;
+  }
+  fs.writeFileSync(path.join(dir, 'context.json'), JSON.stringify(Object.keys(files).sort()));
+  fs.writeFileSync(path.join(dir, 'dockerfile-snapshot'), files.Dockerfile);
   fs.writeFileSync(args[args.indexOf('--iidfile') + 1], config.localImageId);
 } else console.log(JSON.stringify([{ Id: config.localImageId, Os: 'linux', Architecture: config.arch || 'amd64', Config: { Labels: { 'org.opencontainers.image.revision': config.label || config.revision } } }]));
 `,
@@ -160,8 +172,31 @@ it("builds only an allowlisted Git snapshot and records the inspected image prov
       registryDigest: null,
     });
     expect(record.contextManifestSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(record.contextArchiveSha256).toBe(
+      createHash("sha256")
+        .update(readFileSync(join(f.dir, "snapshot.tar")))
+        .digest("hex"),
+    );
+    const listed = spawnSync("tar", ["-tf", "-"], {
+      input: readFileSync(join(f.dir, "snapshot.tar")),
+      encoding: "utf8",
+    });
+    expect(listed.status, listed.stderr).toBe(0);
+    expect(listed.stdout.trim().split("\n").sort()).toEqual(files.slice(0, 10).sort());
     expect(record.contextManifest).toHaveLength(10);
     expect(result.stdout).toContain("Not published or deployed");
+  } finally {
+    f.cleanup();
+  }
+});
+
+it("feeds a Git snapshot through stdin rather than a replaceable context directory", () => {
+  const f = fixture({ changeContext: true });
+  try {
+    const result = f.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(f.log("docker")[0].at(-1)).toBe("-");
+    expect(readFileSync(join(f.dir, "dockerfile-snapshot"), "utf8")).toBe("content:Dockerfile");
   } finally {
     f.cleanup();
   }
@@ -191,7 +226,6 @@ it.each([
 
 it.each([
   [{ dockerFail: true }, "docker"],
-  [{ changeContext: true }, "context changed"],
   [{ arch: "arm64" }, "inspection"],
   [{ label: "wrong" }, "inspection"],
   [{ localImageId: "unknown" }, "valid local image ID"],

@@ -1,17 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 // Do not inherit Git's repository/config overrides from a caller's shell.
 const env = {
@@ -78,38 +69,32 @@ function allowed(path) {
   return /^generated\/(?:sdk\/[a-zA-Z0-9_./-]+\.ts|openapi\/[a-zA-Z0-9_./-]+\.ya?ml)$/.test(path);
 }
 
-function makeWritable(path) {
-  chmodSync(path, 0o700);
-  for (const entry of readdirSync(path, { withFileTypes: true })) {
-    if (entry.isDirectory()) makeWritable(join(path, entry.name));
-  }
+// Build a tar in memory directly from Git objects; no mutable filesystem path
+// exists for a second process to replace temporarily while Docker reads it.
+function tarEntry(path, data, mode) {
+  if (Buffer.byteLength(path) > 100) throw new Error(`build input path too long: ${path}`);
+  const header = Buffer.alloc(512);
+  const text = (value, offset, length) => header.write(value, offset, length, "utf8");
+  const octal = (value, offset, length) => {
+    const digits = value.toString(8);
+    if (digits.length > length - 1) throw new Error("build input too large for tar");
+    text(digits.padStart(length - 1, "0") + "\0", offset, length);
+  };
+  text(path, 0, 100);
+  octal(mode === "100755" ? 0o755 : 0o644, 100, 8);
+  octal(0, 108, 8);
+  octal(0, 116, 8);
+  octal(data.length, 124, 12);
+  octal(0, 136, 12);
+  header.fill(0x20, 148, 156);
+  text("0", 156, 1);
+  text("ustar\0", 257, 6);
+  text("00", 263, 2);
+  const checksum = header.reduce((sum, value) => sum + value, 0);
+  text(checksum.toString(8).padStart(6, "0") + "\0 ", 148, 8);
+  return [header, data, Buffer.alloc((512 - (data.length % 512)) % 512)];
 }
 
-function freeze(path) {
-  for (const entry of readdirSync(path, { withFileTypes: true })) {
-    if (entry.isDirectory()) freeze(join(path, entry.name));
-  }
-  chmodSync(path, 0o500);
-}
-
-function contextContents(path) {
-  const entries = [];
-  function visit(directory, prefix = "") {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const name = `${prefix}${entry.name}`;
-      const target = join(directory, entry.name);
-      if (entry.isDirectory()) visit(target, `${name}/`);
-      else if (entry.isFile()) {
-        entries.push([name, createHash("sha256").update(readFileSync(target)).digest("hex")]);
-      } else throw new Error("build context changed: unexpected entry");
-    }
-  }
-  visit(path);
-  entries.sort(([a], [b]) => a.localeCompare(b));
-  return JSON.stringify(entries);
-}
-
-let context;
 try {
   if (process.argv.length !== 2) throw new Error("this preparation command accepts no arguments");
   state();
@@ -130,9 +115,9 @@ try {
   state();
   const sourceRevision = revision();
 
-  context = mkdtempSync(join(tmpdir(), "calendar-deploy-context-"));
   const tree = git("ls-tree", "-rz", "--full-tree", sourceRevision);
   const manifest = [];
+  const tar = [];
   for (const entry of tree.split("\0")) {
     if (!entry) continue;
     const match = /^(\d+) (\w+) ([a-f0-9]+)\t(.+)$/.exec(entry);
@@ -146,13 +131,8 @@ try {
       path.split("/").some((part) => part === ".." || part === ".")
     )
       throw new Error(`unsafe Git tree entry: ${path}`);
-    const target = join(context, path);
-    mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
-    writeFileSync(
-      target,
-      run("git", ["cat-file", "blob", object], { maxBuffer: 64 * 1024 * 1024 }),
-      { mode: 0o400 },
-    );
+    const data = run("git", ["cat-file", "blob", object], { maxBuffer: 64 * 1024 * 1024 });
+    tar.push(...tarEntry(path, data, mode));
     manifest.push(`${mode} ${object} ${path}`);
   }
   for (const required of [
@@ -171,8 +151,7 @@ try {
   const contextDigest = createHash("sha256")
     .update(manifest.join("\n") + "\n")
     .digest("hex");
-  freeze(context);
-  const contextBeforeBuild = contextContents(context);
+  const context = Buffer.concat([...tar, Buffer.alloc(1024)]);
   state();
   if (revision() !== sourceRevision) throw new Error("source revision changed during preparation");
   const recordDir = mkdtempSync(join(tmpdir(), "calendar-deploy-provenance-"));
@@ -189,12 +168,10 @@ try {
       `org.opencontainers.image.revision=${sourceRevision}`,
       "--iidfile",
       iidfile,
-      context,
+      "-",
     ],
-    { stdio: "inherit" },
+    { input: context, stdio: ["pipe", "inherit", "inherit"] },
   );
-  if (contextContents(context) !== contextBeforeBuild)
-    throw new Error("build context changed during build");
   const localImageId = readFileSync(iidfile, "utf8").trim();
   if (!imageId.test(localImageId)) throw new Error("Docker did not provide a valid local image ID");
   const inspected = JSON.parse(
@@ -217,6 +194,7 @@ try {
     platform: "linux/amd64",
     localImageId,
     contextManifestSha256: contextDigest,
+    contextArchiveSha256: createHash("sha256").update(context).digest("hex"),
     contextManifest: manifest,
     registryDigest: null,
   };
@@ -228,9 +206,4 @@ try {
 } catch (error) {
   console.error(`Preparation failed: ${error.message}`);
   process.exitCode = 1;
-} finally {
-  if (context) {
-    makeWritable(context);
-    rmSync(context, { recursive: true, force: true });
-  }
 }

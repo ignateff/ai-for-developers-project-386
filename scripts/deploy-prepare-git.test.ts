@@ -57,12 +57,19 @@ function fixture() {
     join(bin, "docker"),
     `#!${process.execPath}
 const fs = require('fs');
-const path = require('path');
 const args = process.argv.slice(2);
 fs.appendFileSync(process.env.FIXTURE + '/docker.log', JSON.stringify(args) + '\\n');
 const image = 'sha256:' + 'b'.repeat(64);
 if (args[0] === 'build') {
-  fs.writeFileSync(process.env.FIXTURE + '/snapshot', fs.readFileSync(path.join(args.at(-1), 'apps/web/src/app/main.tsx')));
+  if (args.at(-1) !== '-') process.exit(12);
+  const tar = fs.readFileSync(0);
+  for (let p = 0; p + 512 <= tar.length;) {
+    const name = tar.subarray(p, p + 100).toString().replace(/\0.*$/, '');
+    if (!name) break;
+    const size = parseInt(tar.subarray(p + 124, p + 136).toString().replace(/\0.*$/, '').trim(), 8) || 0;
+    if (name === 'apps/web/src/app/main.tsx') fs.writeFileSync(process.env.FIXTURE + '/snapshot', tar.subarray(p + 512, p + 512 + size));
+    p += 512 + Math.ceil(size / 512) * 512;
+  }
   fs.writeFileSync(args[args.indexOf('--iidfile') + 1], image);
   fs.writeFileSync(process.env.FIXTURE + '/revision', args[args.indexOf('--build-arg') + 1].split('=')[1]);
 } else console.log(JSON.stringify([{Id:image, Os:'linux', Architecture:'amd64', Config:{Labels:{'org.opencontainers.image.revision':fs.readFileSync(process.env.FIXTURE + '/revision', 'utf8')}}}]));
