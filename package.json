@@ -11,6 +11,7 @@
     "test": "vitest run",
     "build": "pnpm -r --if-present build",
     "build:docker": "node scripts/build-docker.mjs",
+    "test:docker-smoke": "node scripts/docker-smoke.ts",
     "deploy:prepare": "node scripts/deploy-prepare.mjs",
     "deploy:fly": "node scripts/deploy-fly.mjs",
     "generate": "tsp compile contract/main.tsp && orval --config contract/orval.config.ts",
