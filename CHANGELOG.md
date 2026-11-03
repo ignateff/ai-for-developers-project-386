@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.4.1...v0.5.0) (2026-11-03)
+
+
+### Features
+
+* **deploy:** add explicit Fly deployment pipeline ([1de8f19](https://github.com/ignateff/ai-for-developers-project-386/commit/1de8f19b56d177b257f3fac64960cda8478970cc)), closes [#79](https://github.com/ignateff/ai-for-developers-project-386/issues/79)
+* **deploy:** prepare verified local image ([2593381](https://github.com/ignateff/ai-for-developers-project-386/commit/259338175b515cc2e6e6e877e6354119c9212b60)), closes [#78](https://github.com/ignateff/ai-for-developers-project-386/issues/78)
+* **tooling:** improve deployment verification and agent guidance ([76723b1](https://github.com/ignateff/ai-for-developers-project-386/commit/76723b1296a6f14f2ff40d724c19519de297b792))
+
+
+### Bug Fixes
+
+* **deploy:** build from an in-memory Git snapshot ([b62447e](https://github.com/ignateff/ai-for-developers-project-386/commit/b62447e524ef906a6a3b33daae150d96ffe7ca88)), closes [#79](https://github.com/ignateff/ai-for-developers-project-386/issues/79)
+* **deploy:** check checkout state before updating refs ([07a60a6](https://github.com/ignateff/ai-for-developers-project-386/commit/07a60a65eb42ccbd1aa65ebd17798f1b3ac6ba3f)), closes [#79](https://github.com/ignateff/ai-for-developers-project-386/issues/79)
+* **deploy:** detect build context changes ([f610d52](https://github.com/ignateff/ai-for-developers-project-386/commit/f610d5241f5ca958f6fcc16a2095e10d6f913f7c)), closes [#79](https://github.com/ignateff/ai-for-developers-project-386/issues/79)
+* **deploy:** harden preparation git gate ([be4c7ff](https://github.com/ignateff/ai-for-developers-project-386/commit/be4c7ffcb1454be30633e1b382265de917bdc5c8)), closes [#78](https://github.com/ignateff/ai-for-developers-project-386/issues/78)
+* **deploy:** reject stopped machines with unverified shutdown causes ([1071088](https://github.com/ignateff/ai-for-developers-project-386/commit/10710888518cb9fdbf9b495a1b61aac191909fd6)), closes [#82](https://github.com/ignateff/ai-for-developers-project-386/issues/82)
+* integrate deploy gate safeguards ([8fd41e0](https://github.com/ignateff/ai-for-developers-project-386/commit/8fd41e05cac3d3861b3e1172b25d18280cf92d0b)), closes [#78](https://github.com/ignateff/ai-for-developers-project-386/issues/78)
+* **smoke:** reconcile uncertain Docker outcomes and verify context inputs ([ec8f07b](https://github.com/ignateff/ai-for-developers-project-386/commit/ec8f07bdcaa0d8a651f777d2e6048e45b4b06584)), closes [#76](https://github.com/ignateff/ai-for-developers-project-386/issues/76)
+* **smoke:** verify inputs and recover owned resources ([f3550d6](https://github.com/ignateff/ai-for-developers-project-386/commit/f3550d6fc87a833b1d8700dc82129ed6268ac82a)), closes [#76](https://github.com/ignateff/ai-for-developers-project-386/issues/76)
+* **tooling:** preserve deployment locks and verify recovery outcomes ([892934b](https://github.com/ignateff/ai-for-developers-project-386/commit/892934b0aedf09e252d3ac5f534da0d0941c361b)), closes [#82](https://github.com/ignateff/ai-for-developers-project-386/issues/82)
+
 ## [0.4.1](https://github.com/ignateff/ai-for-developers-project-386/compare/v0.4.0...v0.4.1) (2026-11-03)
 
 
