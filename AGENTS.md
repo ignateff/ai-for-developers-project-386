@@ -20,6 +20,9 @@
 
 ## Deployment
 
+- Deploy this repository only from a clean `main` after a successful fresh fetch from `origin`, a fast-forward-only update, and verification that `HEAD`, local `main`, and `origin/main` are identical. Local changes (including untracked files), unpublished commits, divergence, or a failed fetch block deployment; preserve existing work instead of automatically stashing, resetting, or cleaning it.
+- Repeat that gate before publishing an image or triggering a deployment and on every retry/resume after a pause or network failure. The source checkout must still pass the gate, and the artifact must match that commit; if `main` advanced, rebuild and verify a new artifact. A temporary build context or prebuilt image does not bypass this rule.
+- Rollback to a previously published image is a separate recovery exception requiring explicit user authorization, verified image provenance, and data/configuration compatibility checks. An ordinary request to deploy or retry is not rollback authorization.
 - The app deploys to Fly.io Machines as a single Docker container built from the root `Dockerfile`; Fastify serves the API and the built frontend, listening on `PORT`.
 - For anything deployment-related — `fly launch`, `fly deploy`, `fly.toml` changes, volumes, debugging a live app — use the project skill `.agents/skills/fly-deploy`. Do not improvise Fly.io commands outside it.
 - Researched Fly.io reference with sources: `docs/research/fly-io-cli-deploy.md`.
