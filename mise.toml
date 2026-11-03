@@ -98,6 +98,10 @@ run = "pnpm run build:docker"
 description = "Smoke-test the working-copy production container and frontend"
 run = "pnpm run test:docker-smoke"
 
+[tasks."deploy:prepare"]
+description = "Prepare a verified local deployment image (does not publish)"
+run = "pnpm run deploy:prepare"
+
 [tasks.start]
 description = "Run the built API server (serves the built frontend when present)"
 run = "pnpm --filter @calendar/api start"
