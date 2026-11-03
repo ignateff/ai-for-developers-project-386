@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
@@ -108,6 +116,39 @@ it("refuses a Dockerfile-specific ignore file whose precedence is not supported"
     );
   } finally {
     cleanup();
+  }
+});
+
+it("does not silently ignore a file whose name ends with a newline", () => {
+  const { root, context, cleanup } = fixture();
+  try {
+    writeFileSync(join(root, "fly.toml\n"), "not-for-output");
+    // A literal dockerignore entry `fly.toml` must not match this distinct file.
+    writeFileSync(join(root, ".dockerignore"), ".git\nfly.toml\n");
+    expect(() => createContext(root, context)).toThrow(/unapproved/i);
+    expect(existsSync(join(context, "fly.toml\n"))).toBe(false);
+  } finally {
+    cleanup();
+  }
+});
+
+it("rejects symlinked directories and symlinked inputs without following them", () => {
+  const { root, context, cleanup } = fixture();
+  const outside = mkdtempSync(join(tmpdir(), "smoke-outside-"));
+  try {
+    writeFileSync(join(outside, "outside.txt"), "not-for-output");
+    symlinkSync(outside, join(root, "apps/web/outside-link"), "dir");
+    symlinkSync(join(outside, "outside.txt"), join(root, "apps/web/public/file-link.txt"));
+    expect(() =>
+      createContext(root, context, [
+        "apps/web/outside-link/outside.txt",
+        "apps/web/public/file-link.txt",
+      ]),
+    ).toThrow(/non-regular|symlink/i);
+    expect(existsSync(join(context, "apps/web/public/file-link.txt"))).toBe(false);
+  } finally {
+    cleanup();
+    rmSync(outside, { recursive: true, force: true });
   }
 });
 

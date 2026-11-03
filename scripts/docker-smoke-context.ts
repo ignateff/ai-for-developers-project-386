@@ -36,7 +36,8 @@ function ignoredByDocker(root: string): (path: string) => boolean {
     const expression =
       (anywhere ? "(?:.*/)?" : "") +
       suffix.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*");
-    return new RegExp(`^${expression}$`);
+    // `$` also matches before a trailing newline; require the true end of input.
+    return new RegExp(`^${expression}(?![\\s\\S])`);
   });
   return (path) => {
     const parts = path.split("/");
@@ -105,21 +106,43 @@ export function createContext(root: string, context: string, approvals: string[]
     }
   }
   visit(root);
+  const realRoot = realpathSync(root);
   for (const directory of directories) mkdirSync(join(context, directory), { recursive: true });
   for (const file of files) {
     const destination = join(context, file);
     mkdirSync(dirname(destination), { recursive: true });
-    const source = join(root, file);
-    const realRoot = realpathSync(root);
-    if (realpathSync(dirname(source)) !== join(realRoot, dirname(file)))
-      throw new Error(`Context directory changed or contains a symlink: ${file}`);
-    const fd = openSync(source, constants.O_RDONLY | constants.O_NOFOLLOW);
-    try {
-      const stat = fstatSync(fd);
-      if (!stat.isFile()) throw new Error(`Unsupported non-regular context input: ${file}`);
-      writeFileSync(destination, readFileSync(fd), { mode: stat.mode & 0o777 });
-    } finally {
-      closeSync(fd);
-    }
+    copyOwnedFile(root, realRoot, file, destination);
+  }
+}
+
+// Copy with the practical checks POSIX offers against concurrent checkout
+// changes: the parent directory must resolve inside the real checkout both
+// before and after opening, the final component is opened without following a
+// symlink, and the opened descriptor must still be the same inode a fresh
+// lookup sees. A directory raced to a symlink in the window between these
+// checks makes the opened inode diverge from the pinned in-checkout path and
+// fails closed. An adversary swapping the parent and restoring it between the
+// two syscalls cannot be excluded by userland checks; do not rely on the smoke
+// context while hostile processes write into the checkout.
+function copyOwnedFile(root: string, realRoot: string, file: string, destination: string): void {
+  const source = join(root, file);
+  const expectedDirectory = join(realRoot, dirname(file));
+  if (realpathSync(dirname(source)) !== expectedDirectory)
+    throw new Error(`Context directory changed or contains a symlink: ${file}`);
+  const fd = openSync(source, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const opened = fstatSync(fd);
+    if (realpathSync(dirname(source)) !== expectedDirectory)
+      throw new Error(`Context directory changed while reading: ${file}`);
+    const current = lstatSync(source);
+    if (!opened.isFile() || !current.isFile())
+      throw new Error(`Unsupported non-regular context input: ${file}`);
+    if (opened.dev !== current.dev || opened.ino !== current.ino)
+      throw new Error(`Context input was replaced while reading: ${file}`);
+    if (realpathSync(source) !== join(realRoot, file))
+      throw new Error(`Context input resolves outside the checkout: ${file}`);
+    writeFileSync(destination, readFileSync(fd), { mode: opened.mode & 0o777 });
+  } finally {
+    closeSync(fd);
   }
 }
