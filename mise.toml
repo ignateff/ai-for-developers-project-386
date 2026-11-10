@@ -140,7 +140,7 @@ run = [
   "pnpm run check:generated",
   "pnpm run build",
   "pnpm run test:docker-smoke",
-  "jactionlint .github/workflows/ci.yml .github/workflows/release-please.yml",
+  "jactionlint .github/workflows/ci.yml .github/workflows/release-please.yml .github/workflows/agent-interactive.yml .github/workflows/agent-review.yml .github/workflows/agent-triage.yml .github/workflows/agent-audit.yml",
 ]
 
 [daemons.api]

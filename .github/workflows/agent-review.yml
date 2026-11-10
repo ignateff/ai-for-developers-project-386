@@ -1,0 +1,80 @@
+name: OpenCode review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: opencode-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: false && github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AGENT_OUTPUT_FILE: /tmp/opencode-${{ github.run_id }}/review.md
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5
+        with:
+          version: 2026.10.23
+      - run: pnpm install --frozen-lockfile
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Claim a per-PR model run
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MAX_RUNS_PER_PR: ${{ vars.OPENCODE_MAX_RUNS_PER_PR || '3' }}
+          AGENT_BOT_LOGIN: ${{ vars.OPENCODE_APP_BOT_LOGIN || 'calendar-release-ignateff-bot[bot]' }}
+        run: node scripts/agent-run-limit.ts
+      # Pinned CLI version; transitive npm dependencies are not yet locked.
+      # jactionlint ignore=adhoc-packages
+      - name: Install OpenCode
+        run: npm install --global @opencode/cli@2.2.6
+      - name: Review the head SHA
+        id: model
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p "$(dirname "$AGENT_OUTPUT_FILE")"
+          git fetch origin "$HEAD_SHA"
+          PROMPT="Review PR #${PR_NUMBER} at exact head ${HEAD_SHA}. Read REVIEW.md and AGENTS.md from the trusted base checkout first. Inspect git diff HEAD...${HEAD_SHA} and changed files with git show ${HEAD_SHA}:path; do not execute code from the PR. Criteria: correctness against linked issues and specifications; preservation of booking invariants and API contracts; adequate positive, negative, and browser tests; security of credentials and GitHub triggers; documentation accuracy. Identify concrete findings in severity order with file and line references. Distinguish blockers from limitations. If no finding is supported by evidence, say so explicitly. Do not edit files, approve the PR, or invent a human decision."
+          set -o pipefail
+          opencode run --standalone --archived --auto --agent reviewer --model anthropic/claude-sonnet-5-5 "$PROMPT" | tee "$AGENT_OUTPUT_FILE"
+      - name: Publish automated review
+        if: steps.model.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/agent-comment.ts
+      - name: Save the review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opencode-review-${{ github.run_id }}
+          path: /tmp/opencode-${{ github.run_id }}/
+          if-no-files-found: ignore
+          retention-days: 30
