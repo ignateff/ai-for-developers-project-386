@@ -1,0 +1,100 @@
+name: OpenCode interactive
+
+on:
+  # Command author is checked, but interactive writes remain disabled pending security redesign.
+  # jactionlint ignore=dangerous-triggers
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: opencode-pr-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  respond:
+    if: >-
+      false &&
+      github.event.sender.type != 'Bot' &&
+      contains(github.event.comment.body, '@opencode') &&
+      (github.event.comment.author_association == 'OWNER' ||
+      github.event.comment.author_association == 'MEMBER' ||
+      github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      AGENT_OUTPUT_FILE: /tmp/opencode-${{ github.run_id }}/response.md
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5
+        with:
+          version: 2026.10.23
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve trusted command and PR state
+        id: context
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/agent-prepare.ts
+      - name: Refuse credentials for a fork PR
+        if: steps.context.outputs.head_repo_fork == 'true'
+        run: |
+          echo "Fork PRs do not receive the GitHub App token or model secret."
+          exit 1
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.context.outputs.head_repo_fork != 'true'
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Claim a per-PR model run
+        if: steps.context.outputs.is_pr == 'true' && steps.context.outputs.head_repo_fork != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+          HEAD_SHA: ${{ steps.context.outputs.head_sha }}
+          MAX_RUNS_PER_PR: ${{ vars.OPENCODE_MAX_RUNS_PER_PR || '3' }}
+          AGENT_BOT_LOGIN: ${{ vars.OPENCODE_APP_BOT_LOGIN || 'calendar-release-ignateff-bot[bot]' }}
+        run: node scripts/agent-run-limit.ts
+      # Pinned CLI version; transitive npm dependencies are not yet locked.
+      # jactionlint ignore=adhoc-packages
+      - name: Install OpenCode
+        if: steps.context.outputs.head_repo_fork != 'true'
+        run: npm install --global @opencode/cli@2.2.6
+      - name: Run the trusted command
+        id: model
+        if: steps.context.outputs.head_repo_fork != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PROMPT_PATH: ${{ steps.context.outputs.prompt_path }}
+        run: |
+          mkdir -p "$(dirname "$AGENT_OUTPUT_FILE")"
+          PROMPT="$(cat "$PROMPT_PATH")"
+          set -o pipefail
+          opencode run --standalone --archived --auto --agent github --model anthropic/claude-sonnet-5-5 "$PROMPT" | tee "$AGENT_OUTPUT_FILE"
+      - name: Publish the response
+        if: steps.model.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.context.outputs.number }}
+        run: node scripts/agent-comment.ts
+      - name: Save the agent output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opencode-interactive-${{ github.run_id }}
+          path: /tmp/opencode-${{ github.run_id }}/
+          if-no-files-found: ignore
+          retention-days: 30

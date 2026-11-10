@@ -1,0 +1,72 @@
+name: OpenCode scheduled audit
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: Additional audit focus (optional)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: opencode-audit-main
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: false && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AGENT_OUTPUT_FILE: /tmp/opencode-${{ github.run_id }}/audit.md
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5
+        with:
+          version: 2026.10.23
+      - run: pnpm install --frozen-lockfile
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: write
+      # Pinned CLI version; transitive npm dependencies are not yet locked.
+      # jactionlint ignore=adhoc-packages
+      - name: Install OpenCode
+        run: npm install --global @opencode/cli@2.2.6
+      - name: Audit the repository
+        id: model
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HEAD_SHA: ${{ github.sha }}
+          CUSTOM_PROMPT: ${{ inputs.prompt }}
+        run: |
+          mkdir -p "$(dirname "$AGENT_OUTPUT_FILE")"
+          CUSTOM_JSON="$(node -e 'process.stdout.write(JSON.stringify(process.env.CUSTOM_PROMPT || ""))')"
+          PROMPT="Audit repository head ${HEAD_SHA} without editing files or creating issues yourself. Additional human focus JSON: ${CUSTOM_JSON}. Inspect current code, tests, documentation, and GitHub workflows. Look for concrete correctness, security, reproducibility, and documentation defects; verify each finding against file evidence. Do not invent a defect to make the report interesting. Return a Russian Markdown report with checked areas, evidence, and limitations. End with exactly one machine-readable block: <!-- opencode-audit then JSON {\"findings\":[...]} then -->. Each finding needs a stable lowercase kebab-case key tied to the underlying issue, a concise title, a detailed body with file references and remediation, and learning:false. Use at most five findings. If the audit is clean, return findings:[]. A learning task is allowed only when the human explicitly requested one in the additional focus; then set learning:true and clearly identify it as educational. Do not put the literal closing marker --> inside JSON strings. The publisher will deduplicate findings by key across open and closed issues."
+          set -o pipefail
+          opencode run --standalone --archived --auto --agent reviewer --model anthropic/claude-sonnet-5-5 "$PROMPT" | tee "$AGENT_OUTPUT_FILE"
+      - name: Publish new findings without duplicates
+        if: steps.model.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/agent-publish-audit.ts
+      - name: Save the audit report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opencode-audit-${{ github.run_id }}
+          path: /tmp/opencode-${{ github.run_id }}/
+          if-no-files-found: ignore
+          retention-days: 30
